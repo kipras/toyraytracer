@@ -1,7 +1,16 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
-#include "SDL2-2.24.0/x86_64-w64-mingw32/include/SDL2/SDL.h"
+#include <stdbool.h>
+
+#include "envconfig.h"
+#if defined(ENV_LINUX) && ENV_LINUX
+#include "SDL2-2.24.0/include/SDL.h"
+#else
+#include "SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/include/SDL2/SDL.h"
+#endif // ENV_LINUX
+
+#define PI                  3.14159265
 
 #define WINDOW_WIDTH        640
 #define WINDOW_HEIGHT       480
@@ -10,17 +19,19 @@
 #define RAY_BOUNCES_MAX     20
 
 
-typedef int32_t                 Angle;
-#define ANGLE_BITS              32
+typedef double                  Angle;  // Angles are stored as radians
+//#define ANGLE_BITS              32
 
-typedef struct Position2_s      Position2;
-typedef struct Position3_s      Position3;
-typedef struct Direction_s      Direction;
-typedef struct DirectionFrom_s  DirectionFrom;
-typedef struct Ray_s            Ray;
+typedef struct Point2_s         Point2;
+typedef struct Ray2_s           Ray2;
+typedef struct Point3_s         Point3;
+typedef struct Direction3_s     Direction3;
+typedef struct Ray3_s           Ray3;
+//typedef struct Ray3_s           Ray3;
 typedef struct Color_s          Color;
 typedef enum   MaterialType_e   MaterialType;
 typedef enum   ObjectType_e     ObjectType;
+typedef struct Circle_s         Circle;
 typedef struct Sphere_s         Sphere;
 typedef struct Scene_s          Scene;
 typedef enum   TraceHitType_e   TraceHitType;
@@ -28,18 +39,23 @@ typedef struct TraceRes_s       TraceRes;
 typedef struct App_s            App;
 
 
-struct Position2_s {
+struct Point2_s {
     uint32_t    x;
     uint32_t    y;
 };
 
-struct Position3_s {
+struct Ray2_s {
+    Point2  from;
+    Angle   angle;
+};
+
+struct Point3_s {
     uint32_t    x;
     uint32_t    y;
     uint32_t    z;
 };
 
-struct Direction_s {
+struct Direction3_s {
     // Angle on a horizontal plane (a full circle) as a 32 bit signed integer:
     // 0 means:     y=1,  x=0;  i.e. "up" (if looking at the plane)
     // 2^30 means:  y=0,  x=1;  i.e. "right" (if looking at the plane)
@@ -56,21 +72,25 @@ struct Direction_s {
     Angle   vert;
 };
 
-struct DirectionFrom_s {
-    Position3   from;
-    Direction   direction;
+struct Ray3_s {
+    Point3      from;
+    Direction3  direction;
 };
 
-struct Ray_s {
-    DirectionFrom   df;
-    uint8_t         bounces;    // How many bounces this ray already had
-};
+//struct Ray3_s {
+//    Ray3  df;
+//    uint8_t         bounces;    // How many bounces this ray already had
+//};
 
 struct Color_s {
     uint8_t     red;
     uint8_t     green;
     uint8_t     blue;
 };
+#define COLOR_RED   {255,   0,   0}
+#define COLOR_GREEN {  0, 255,   0}
+#define COLOR_BLUE  {  0,   0, 255}
+
 
 enum MaterialType_e {
     Matte = 1, Metal, Glass,
@@ -80,13 +100,18 @@ enum ObjectType_e {
     OTSphere = 1,
 };
 
-struct Sphere_s {
-    // Position of Sphere's center
-    uint32_t    x;
-    uint32_t    y;
+struct Circle_s {
+    Point2      center;
+    uint32_t    radius;
+    double      radiusDiv2;
+};
 
+struct Sphere_s {
+    Point3          center;
     uint32_t        radius;
-    MaterialType    material;
+    double          radiusDiv2;
+    MaterialType    materialType;
+    Color           color;
 };
 
 struct Scene_s {
@@ -115,10 +140,12 @@ struct App_s {
     uint32_t        windowHeight;
 
     Scene           scene;
-    DirectionFrom   camera;
+    Ray3            camera;
 
-    Angle           renderWindowPixelsHorAngleCache[WINDOW_WIDTH];
-    Angle           renderWindowPixelsVertAngleCache[WINDOW_HEIGHT];
+    // Precalculated camera angles for screen pixels
+    Angle           renderWindowPixelsHorAngles[WINDOW_WIDTH];
+    Angle           renderWindowPixelsVertAngles[WINDOW_HEIGHT];
+
     // Direction       renderWindowPixelsCameraDirectionCache[WINDOW_HEIGHT * WINDOW_WIDTH];
 
     // FOV can theoretically go up to the full 360 degrees. However, practically it usually goes up to no more than
@@ -131,8 +158,13 @@ void logErr(char *err);
 App * createApp();
 void initScreen(App *app);
 void initWorld(App *app);
+void initPrecalc(App *app);
 void render(App *app);
 void renderFrame(App *app);
-static Color traceRay(Ray ray);
+Color traceRay(Ray3 ray);
+bool ray3IntersectsSphere(Ray3 *ray3, Sphere *sphere);
+bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle);
+double distanceBetweenPoints2(Point2 *p1, Point2 *p2);
+float fastInvSqrt(float number);
 
 #endif // __MAIN_H__
