@@ -13,7 +13,7 @@
 #define PI                  3.14159265
 
 #define WINDOW_WIDTH        640
-#define WINDOW_HEIGHT       480
+#define WINDOW_HEIGHT       640
 #define FOV                 90
 #define SCENE_SPHERES_MAX   20
 #define RAY_BOUNCES_MAX     20
@@ -40,8 +40,8 @@ typedef struct App_s            App;
 
 
 struct Point2_s {
-    uint32_t    x;
-    uint32_t    y;
+    double  x;
+    double  y;
 };
 
 struct Ray2_s {
@@ -50,9 +50,9 @@ struct Ray2_s {
 };
 
 struct Point3_s {
-    uint32_t    x;
-    uint32_t    y;
-    uint32_t    z;
+    double  x;
+    double  y;
+    double  z;
 };
 
 struct Direction3_s {
@@ -102,14 +102,14 @@ enum ObjectType_e {
 
 struct Circle_s {
     Point2      center;
-    uint32_t    radius;
-    double      radiusDiv2;
+    double      radius;
+//    double      radiusDiv2;
 };
 
 struct Sphere_s {
     Point3          center;
     uint32_t        radius;
-    double          radiusDiv2;
+//    double          radiusDiv2;
     MaterialType    materialType;
     Color           color;
 };
@@ -163,8 +163,8 @@ void render(App *app);
 void renderFrame(App *app);
 Color traceRay(Ray3 ray);
 bool ray3IntersectsSphere(Ray3 *ray3, Sphere *sphere);
-bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle);
-double distanceBetweenPoints2(Point2 *p1, Point2 *p2);
+bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle, bool calculatingHorizontal, double *zCircleCenterX, Angle *rayAndCCAngleAbsRet);
+static inline double distanceBetweenPoints2(Point2 *p1, Point2 *p2);
 float fastInvSqrt(float number);
 
 #endif // __MAIN_H__
