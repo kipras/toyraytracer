@@ -17,11 +17,10 @@
 // #define DEBUG 1
 #define DEBUG 0
 
-#if DEBUG
-#define dbg(...) printf(__VA_ARGS__)
-#else
-#define dbg(...) (0)
-#endif
+bool debug = DEBUG;
+#define DEBUG_ANGLE_TO_CC   debug && 1
+
+#define dbg(...) if (debug) { printf(__VA_ARGS__); }
 
 #define assert2(exp, msg) if (! (exp)) { printf("%s", msg); exit(1); }
 
@@ -101,8 +100,9 @@ void initPrecalc(App *app)
     Angle      *rwpvac, *rwphac;
     double      deg2radMult;        // Degrees to radians multiplier
     double      fovRadians;         // FOV angle in radians
-    double      vertPixelAngle;     // The vertical angle (in radians) covered by the distance of one pixel
-    double      horPixelAngle;      // The horizontal angle (in radians) covered by the distance of one pixel
+    double      fovRadiansDiv2;     // FOV angle in radians / 2
+    double      vertPixelFovAngle;  // The vertical angle (in radians) covered by the distance of one pixel
+    double      horPixelFovAngle;   // The horizontal angle (in radians) covered by the distance of one pixel
     uint32_t    quarter;    // A quarter angle of a 2D plane. Same as a FOV of 90 degrees.
     uint32_t    eighth;     // 1/8 angle of a 2D plane. Same as a FOV of 45 degrees.
     // uint32_t    eighthM1;   // eighth - 1
@@ -117,30 +117,85 @@ void initPrecalc(App *app)
 
     deg2radMult = PI / (double)180;
     fovRadians = (double)app->fov * deg2radMult;
+    fovRadiansDiv2 = fovRadians / 2;
 
-    vertPixelAngle = - fovRadians / (double)app->windowHeight;
-    horPixelAngle  =   fovRadians / (double)app->windowWidth;
+    vertPixelFovAngle = - fovRadians / (double)app->windowHeight;
+    horPixelFovAngle  =   fovRadians / (double)app->windowWidth;
 
     // Fill renderWindowPixelsVertAngles.
     // First half contains decreasing negative numbers.
     // Second half starts with 0 and contains increasing positive numbers
     rwpvac = app->renderWindowPixelsVertAngles;
+    double vertB = whDiv2 * tan(piDiv2 - fovRadiansDiv2);
+    // double vertB = app->windowHeight * tan(piDiv2 - fovRadiansDiv2);
     for (int32_t y = -whDiv2; y < whDiv2; y++) {
-        // Here we assume FOV of 90 degrees, to simplify the calculations (it is simpler, because it matches a quarter of a 2D plane).
-        rwpvac[whDiv2 + y] = y * vertPixelAngle;
+        // rwpvac[whDiv2 + y] = piDiv2 - atan(vertB / -y);
+        rwpvac[whDiv2 + y] = y == 0 ? 0 : atan(-y / vertB);
     }
 
+    // for (int32_t y = -whDiv2; y < whDiv2; y++) {
+    //     rwpvac[whDiv2 + y] = piDiv2 - atan(vertB / fabs(y));
+    // }
+
+    // for (int32_t y = -whDiv2; y < 0; y++) {
+    //     // rwpvac[whDiv2 + y] = piDiv2 - atan(vertB / -y);
+    //     rwpvac[whDiv2 + y] = atan(-y / vertB);
+    // }
+    // rwpvac[whDiv2] = 0;
+    // for (int32_t y = 1; y < whDiv2; y++) {
+    //     // rwpvac[whDiv2 + y] = - (piDiv2 - atan(vertB / y));
+    //     rwpvac[whDiv2 + y] = - atan(y / vertB);
+    // }
+
+    // for (int32_t y = -whDiv2; y < whDiv2; y++) {
+    //     rwpvac[whDiv2 + y] = y * vertPixelFovAngle;
+    // }
+
+
     rwphac = app->renderWindowPixelsHorAngles;
+    double horB = wwDiv2 * tan(piDiv2 - fovRadiansDiv2);
+    // double horB = app->windowWidth * tan(piDiv2 - fovRadiansDiv2);
     for (int32_t x = -wwDiv2; x < wwDiv2; x++) {
-        // Here we assume FOV of 90 degrees, to simplify the calculations (it is simpler, because it matches a quarter of a 2D plane).
-        rwphac[wwDiv2 + x] = x * horPixelAngle;
+        // rwphac[wwDiv2 + x] = - (piDiv2 - atan(horB / -x));
+        rwphac[wwDiv2 + x] = x == 0 ? 0 : - atan(-x / horB);
     }
+
+    // for (int32_t x = -wwDiv2; x < wwDiv2; x++) {
+    //     rwphac[wwDiv2 + x] = piDiv2 - atan(horB / fabs(x));
+    // }
+
+    // for (int32_t x = -wwDiv2; x < 0; x++) {
+    //     // rwphac[wwDiv2 + x] = - (piDiv2 - atan(horB / -x));
+    //     rwphac[wwDiv2 + x] = - atan(-x / horB);
+    // }
+    // rwphac[wwDiv2] = 0;
+    // for (int32_t x = 1; x < wwDiv2; x++) {
+    //     // rwphac[wwDiv2 + x] = piDiv2 - atan(horB / x);
+    //     rwphac[wwDiv2 + x] = atan(x / horB);
+    // }
+
+    // double vertAnglesSum = 0;
+    // for (int32_t y = 0; y < whDiv2; y++) {
+    //     vertAnglesSum += rwpvac[y];
+    // }
+    // printf("vertAnglesSum = %d\n", vertAnglesSum);
+
+    // double horAnglesSum = 0;
+    // for (int32_t x = 0; x < wwDiv2; x++) {
+    //     horAnglesSum += rwphac[wwDiv2 + x];
+    // }
+    // printf("horAnglesSum = %d\n", horAnglesSum);
+    // exit(1);
+
+    // for (int32_t x = -wwDiv2; x < wwDiv2; x++) {
+    //     rwphac[wwDiv2 + x] = x * horPixelFovAngle;
+    // }
 
 //    for (int32_t i = 0; i < WINDOW_HEIGHT; i++) {
 //        printf("rwpvac[%d] = %f\n", i, rwpvac[i]);
 //    }
-//    exit(1);
-//
+// //    exit(1);
+
 //    for (int32_t i = 0; i < WINDOW_WIDTH; i++) {
 //        printf("rwphac[%d] = %f\n", i, rwphac[i]);
 //    }
@@ -199,7 +254,7 @@ void render(App *app)
     // SDL_RenderDrawPoint(app->renderer, WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
     // SDL_RenderPresent(app->renderer);
 
-    SDL_Delay(3000);
+    SDL_Delay(2000);
 }
 
 void renderFrame(App *app)
@@ -219,7 +274,9 @@ void renderFrame(App *app)
     ray.direction.vert = 0;
 
     Sphere s[] = {
-            (Sphere){.center = {.x = 10, .y = 20, .z = 15}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
+            (Sphere){.center = {.x = 15, .y = 20, .z = 20}, .radius = 3, .materialType = Matte, .color = COLOR_RED},
+            // (Sphere){.center = {.x = 7.7, .y = 20, .z = 0}, .radius = 2, .materialType = Matte, .color = COLOR_RED},
+
 //            (Sphere){.center = {.x = 20, .y = 0, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
 //            (Sphere){.center = {.x = 5, .y = 20, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
 //            (Sphere){.center = {.x = 3, .y = 20, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
@@ -242,14 +299,12 @@ void renderFrame(App *app)
 //    exit(1);
 
 // //    uint32_t y = 0, x = 218;
-//     uint32_t y = 239, x = 321;
+//     uint32_t y = 320, x = 423;
 //     ray.direction.vert = app->renderWindowPixelsVertAngles[y];
 //     ray.direction.hor = app->renderWindowPixelsHorAngles[x];
 //     bool intersect = ray3IntersectsSphere(&ray, &s[0]);
-//     if (intersect) {
-//         printf("y = %d, x = %d, vert = %f, hor = %f, intersects sphere = %d\n", y, x, ray.direction.vert,
+//     printf("y = %d, x = %d, vert = %f, hor = %f, intersects sphere = %d\n", y, x, ray.direction.vert,
 //                ray.direction.hor, intersect);
-//     }
 //     SDL_Delay(2000);
 //     exit(1);
 
@@ -322,6 +377,9 @@ bool ray3IntersectsSphere(Ray3 *ray3, Sphere *sphere)
 
     dbg("\n");
     dbg("START intersectVertCircle calc\n");
+    // if (fabs(horRay2.angle - 0) < 0.001) {
+    //     debug = true;
+    // }
     intersectVertCircle = ray2IntersectsCircle(&vertRay2, &vertCircle, false, NULL, NULL);
     dbg("intersectVertCircle = %d\n", intersectVertCircle);
     dbg("END intersectVertCircle calc\n");
@@ -344,11 +402,17 @@ bool ray3IntersectsSphere(Ray3 *ray3, Sphere *sphere)
 
 bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle, bool calculatingHorizontal, double *zCircleCenterX, Angle *zCircleRadius)
 {
-    bool DEBUG_ANGLE_TO_CC = DEBUG && 0;
-
     Angle  angleToCircleCenter, ccToCircleSideAngle, angleToCircleSide2;
     double radiusDiv2, distToCircleCenter, triangleSideLen;
     Point2 *rayFrom, *cc;
+
+    // // printf("calculatingHorizontal = %d, ray2->angle = %f\n", calculatingHorizontal, ray2->angle);
+    // if (debug == true && calculatingHorizontal == false && (fabs(ray2->angle - 1.143736) < 0.001 || fabs(ray2->angle - 0.427060) < 0.001)) {
+    //     printf("\nset debug = true\n");
+    //     // debug = true;
+    // } else {
+    //     debug = DEBUG;
+    // }
 
     rayFrom = &ray2->from;
     cc = &circle->center;
@@ -367,27 +431,27 @@ bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle, bool calculatingHorizontal
     if (calculatingHorizontal) {
         if (y == 0) {
             if (x == 0) {
-                DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 1.1\n");
+                if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 1.1\n"); }
                 return true;
             } else {
-                DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 1.2\n");
+                if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 1.2\n"); }
                 angleToCircleCenter = x > 0 ? piDiv2 : -piDiv2;
             }
         } else {
             if (x >= 0) {
                 if (y >= 0) {
-                    DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 1.3\n");
+                    if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 1.3\n"); }
                     angleToCircleCenter = atan((double)x / y);
                 } else {
-                    DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 1.4\n");
+                    if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 1.4\n"); }
                     angleToCircleCenter = piDiv2 + atan((double)x / -y);
                 }
             } else {
                 if (y >= 0) {
-                    DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 1.5\n");
+                    if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 1.5\n"); }
                     angleToCircleCenter = -atan((double)-x / y);
                 } else {
-                    DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 1.6\n");
+                    if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 1.6\n"); }
                     angleToCircleCenter = -(piDiv2 + atan((double)-x / -y));
                 }
             }
@@ -396,20 +460,20 @@ bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle, bool calculatingHorizontal
         // calculating vertical
         if (x == 0) {
             if (y == 0) {
-                DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 2.1\n");
+                if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 2.1\n"); }
                 return true;
             } else {
-                DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 2.2\n");
+                if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 2.2\n"); }
                 angleToCircleCenter = y > 0 ? piDiv2 : -piDiv2;
             }
         } else {
             assert2(x >= 0, "Fatal error: when calculating intersections on vertical plane, x cannot be negative");
 
             if (y >= 0) {
-                DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 2.3\n");
+                if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 2.3\n"); }
                 angleToCircleCenter = atan((double)y / x);
             } else {
-                DEBUG_ANGLE_TO_CC && dbg("angleToCircleCenter type: 2.6\n");
+                if (DEBUG_ANGLE_TO_CC) { dbg("angleToCircleCenter type: 2.4\n"); }
                 angleToCircleCenter = -atan((double)-y / x);
             }
         }
@@ -417,15 +481,16 @@ bool ray2IntersectsCircle(Ray2 *ray2, Circle *circle, bool calculatingHorizontal
 
 //        radiusDiv2 = circle->radius >> 2;
 //    radiusDiv2 = circle->radiusDiv2;
-    radiusDiv2 = circle->radius / 2;
-    ccToCircleSideAngle = 2 * (asin(radiusDiv2 / distToCircleCenter));
-
-    dbg("angleToCircleCenter = %f\n", angleToCircleCenter);
-    dbg("angleToSideDiff = %f\n", ccToCircleSideAngle);
-    dbg("ray2->angle = %f\n", ray2->angle);
-
-    Angle rayAndCcAngle     = fabs(ray2->angle - angleToCircleCenter);
+    // radiusDiv2 = circle->radius / 2;
+    ccToCircleSideAngle     = asin(circle->radius / distToCircleCenter);
+    Angle rayAndCcAngle     = ray2->angle - angleToCircleCenter;
     Angle rayAndCCAngleAbs  = fabs(rayAndCcAngle);
+
+    dbg("ray2->angle = %f\n", ray2->angle);
+    dbg("angleToCircleCenter = %f\n", angleToCircleCenter);
+    dbg("rayAndCCAngleAbs = %f\n", rayAndCCAngleAbs);
+    dbg("ccToCircleSideAngle = %f\n", ccToCircleSideAngle);
+
 //    return rayAndCcAngle <= ccToCircleSideAngle;
 
     if (calculatingHorizontal) {
