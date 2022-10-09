@@ -13,6 +13,7 @@ fi
 CCOPTS=""
 CCOPTS="${CCOPTS} -g"
 CCOPTS="${CCOPTS} -std=c11"
+# CCOPTS="${CCOPTS} -Wall -Werror -Wextra -pedantic"
 # OPTS="${CCOPTS} -O3"
 
 LINKEROPTS=""

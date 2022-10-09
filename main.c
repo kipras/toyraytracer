@@ -118,8 +118,8 @@ void initPrecalc(App *app)
     deg2radMult = PI / (double)180;
     fovRadians = (double)app->fov * deg2radMult;
 
-    vertPixelAngle = - fovRadians / (double)whDiv2;
-    horPixelAngle  =   fovRadians / (double)wwDiv2;
+    vertPixelAngle = - fovRadians / (double)app->windowHeight;
+    horPixelAngle  =   fovRadians / (double)app->windowWidth;
 
     // Fill renderWindowPixelsVertAngles.
     // First half contains decreasing negative numbers.
@@ -219,7 +219,7 @@ void renderFrame(App *app)
     ray.direction.vert = 0;
 
     Sphere s[] = {
-            (Sphere){.center = {.x = 0, .y = 10, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
+            (Sphere){.center = {.x = 10, .y = 20, .z = 15}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
 //            (Sphere){.center = {.x = 20, .y = 0, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
 //            (Sphere){.center = {.x = 5, .y = 20, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
 //            (Sphere){.center = {.x = 3, .y = 20, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED},
@@ -242,12 +242,14 @@ void renderFrame(App *app)
 //    exit(1);
 
 // //    uint32_t y = 0, x = 218;
-//     uint32_t y = 320, x = 423;
+//     uint32_t y = 239, x = 321;
 //     ray.direction.vert = app->renderWindowPixelsVertAngles[y];
 //     ray.direction.hor = app->renderWindowPixelsHorAngles[x];
 //     bool intersect = ray3IntersectsSphere(&ray, &s[0]);
-//     printf("y = %d, x = %d, vert = %f, hor = %f, intersects sphere = %d\n", y, x, ray.direction.vert,
+//     if (intersect) {
+//         printf("y = %d, x = %d, vert = %f, hor = %f, intersects sphere = %d\n", y, x, ray.direction.vert,
 //                ray.direction.hor, intersect);
+//     }
 //     SDL_Delay(2000);
 //     exit(1);
 
