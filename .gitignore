@@ -1,4 +1,5 @@
 /.idea
+/_bak
 /cmake-build-debug
 /SDL2-2.24.0
 /SDL2-devel-2.24.0-mingw

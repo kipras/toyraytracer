@@ -17,7 +17,10 @@ fi
 CCOPTS=""
 CCOPTS="${CCOPTS} -g"
 CCOPTS="${CCOPTS} -std=c11"
-CCOPTS="${CCOPTS} -Wall -Werror -Wextra -pedantic"
+CCOPTS="${CCOPTS} -Wall"
+CCOPTS="${CCOPTS} -Werror"
+CCOPTS="${CCOPTS} -Wextra"
+# CCOPTS="${CCOPTS} -pedantic"
 # CCOPTS="${CCOPTS} -O2"
 # CCOPTS="${CCOPTS} -O3"
 

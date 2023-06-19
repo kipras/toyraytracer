@@ -29,29 +29,29 @@ int WinMain()
 {
     App *app;
 
-    app = createApp();
-    initScreen(app);
-    initWorld(app);
-    initPrecalc(app);
+    app = create_app();
+    init_screen(app);
+    init_world(app);
+    init_precalc(app);
     render(app);
 
     return 0;
 }
 
-void logErr(char *err)
+void log_err(char *err)
 {
     fprintf(stderr, "%s", err);
 }
 
-App * createApp()
+App * create_app()
 {
     App *app;
 
     setbuf(stdout, NULL);
 
-    app = malloc(sizeof(App));
+    app = ralloc(sizeof(App));
     if (app == NULL) {
-        logErr("Fatal error: could not allocate App. Out of memory?");
+        log_err("Fatal error: could not allocate App. Out of memory?");
         exit(1);
     }
 
@@ -61,7 +61,7 @@ App * createApp()
     return app;
 }
 
-void initScreen(App *app)
+void init_screen(App *app)
 {
     app->windowWidth    = WINDOW_WIDTH;
     app->windowHeight   = WINDOW_HEIGHT;
@@ -75,7 +75,7 @@ void initScreen(App *app)
     SDL_RenderPresent(app->renderer);
 }
 
-void initWorld(App *app)
+void init_world(App *app)
 {
     // app->camera.from.x = 0;
     // app->camera.from.y = 0;
@@ -87,31 +87,32 @@ void initWorld(App *app)
 
     app->fov = FOV;
 
-    // app->scene.spheres[0] = (Sphere){.center = {.x = 0, .y = 20, .z = 0}, .radius = 5, .materialType = Matte, .color = COLOR_RED};
+    app->scene.spheres[0] = (Sphere){.center = {.x = 0, .y = 0, .z = -10}, .radius = 5, .materialType = Matte, .color = COLOR_RED};
+    app->scene.spheresLength = 1;
 }
 
-// void initPrecalc(App *app)
-void initPrecalc()
+// void init_precalc(App *app)
+void init_precalc()
 {
 }
 
 void render(App *app)
 {
-    renderFrame(app);
+    render_frame(app);
 
 //    // Render 100 rays per pixel
 //    for (uint64_t i = 0; i < 100; i++) {
-//        renderFrame(app);
+//        render_frame(app);
 //    }
 
     // SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, 255);
     // SDL_RenderDrawPoint(app->renderer, WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
     // SDL_RenderPresent(app->renderer);
 
-    SDL_Delay(2000);
+    SDL_Delay(3000);
 }
 
-void renderFrame(App *app)
+void render_frame(App *app)
 {
     Vector3 cameraPosition = {.x = 0, .y = 0, .z = 0};
     Ray ray = {
@@ -132,13 +133,23 @@ void renderFrame(App *app)
             ray.direction.x = ((double)screenX / windowMidWidth) - 1;
             // printf("ray.direction.x = %f\n", ray.direction.x);
 
-            Color color = {
-                .red = (ray.direction.x + 1) * 128,
-                .green = (ray.direction.y + 1) * 128,
-                .blue = 0,
-            };
-            SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-            SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+            Sphere *sphereList = app->scene.spheres;
+            for (uint32_t i = 0; i < app->scene.spheresLength; i++) {
+                Sphere *sphere = &sphereList[i];
+                if (ray_hit_sphere(&ray, sphere)) {
+                    Color *color = &sphere->color;
+                    SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
+                    SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+                }
+            }
+
+            // Color color = {
+            //     .red = (ray.direction.x + 1) * 128,
+            //     .green = (ray.direction.y + 1) * 128,
+            //     .blue = 0,
+            // };
+            // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
+            // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
         }
     }
 
@@ -148,7 +159,7 @@ void renderFrame(App *app)
     SDL_RenderPresent(app->renderer);
 }
 
-// float fastInvSqrt(float number)
+// float fast_inv_sqrt(float number)
 // {
 //     long i;
 //     float x2, y;

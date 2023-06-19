@@ -18,6 +18,14 @@ struct Ray_s {
 };
 
 
+/**
+ * Returns a 3D coordinate (Point3) that is at `dist` distance along the vector.
+ */
 Vector3 * ray_point(Ray *ray, double dist);
+
+/**
+ * Returns `true` if `ray` hits `sphere`, otherwise returns `false`.
+ */
+bool ray_hit_sphere(Ray *ray, Sphere *sphere);
 
 #endif // __RAY_H__
