@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-# Exit when any command fails.
-set -e
-
-
 DIR=$(realpath $(dirname "${0}"))
 
 #    `SDL2-2.24.0/x86_64-w64-mingw32/bin/sdl2-config --cflags --libs` \
@@ -17,9 +13,8 @@ fi
 CCOPTS=""
 CCOPTS="${CCOPTS} -g"
 CCOPTS="${CCOPTS} -std=c11"
-CCOPTS="${CCOPTS} -Wall -Werror -Wextra -pedantic"
-# CCOPTS="${CCOPTS} -O2"
-# CCOPTS="${CCOPTS} -O3"
+# CCOPTS="${CCOPTS} -Wall -Werror -Wextra -pedantic"
+# OPTS="${CCOPTS} -O3"
 
 LINKEROPTS=""
 if [[ ${ENV_LINUX} == 1 ]]; then
@@ -28,27 +23,17 @@ else
     LINKEROPTS='-L SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows'
 fi
 
-MAIN_BIN=""
+BIN=""
 if [[ ${ENV_LINUX} == 1 ]]; then
-    MAIN_BIN='./main'
+    BIN='./main'
 else
-    MAIN_BIN='./main.exe'
+    BIN='./main.exe'
 fi
 
 "${CC}" \
     ${CCOPTS} \
-    -c 'main.c' \
-    -o 'main.o'
-
-"${CC}" \
-    ${CCOPTS} \
-    -c 'ray.c' \
-    -o 'ray.o'
-
-"${CC}" \
-    ${CCOPTS} \
-    'main.o' 'ray.o' \
-    -o ${MAIN_BIN} \
+    'main.c' \
+    -o ${BIN} \
     ${LINKEROPTS} \
     \
-    && ${MAIN_BIN}
+    && ${BIN}

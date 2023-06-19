@@ -1,0 +1,8 @@
+{
+  "cmake.configureOnOpen": true,
+  "editor.tabSize": 4,
+  "cSpell.words": [
+    "ralloc",
+    "rvec"
+  ]
+}

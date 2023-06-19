@@ -6,8 +6,8 @@
 /CMakeLists.txt
 /envconfig.h
 /main
-/main.*.c
 /out.txt
+/v1/main.*.c
 
 .fuse_hidden*
 *.dll
