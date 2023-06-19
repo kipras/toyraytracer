@@ -6,6 +6,9 @@
 
 #include "main.h"
 
+#include "ray.h"
+#include "vector.h"
+
 
 bool debug = DEBUG;
 #define DEBUG_ANGLE_TO_CC   debug && 1
@@ -112,7 +115,7 @@ void renderFrame(App *app)
 {
     Vector3 cameraPosition = {.x = 0, .y = 0, .z = 0};
     Ray ray = {
-        .start = cameraPosition,
+        .origin = cameraPosition,
         .direction = {.x = 0, .y = 0, .z = -1},
     };
 

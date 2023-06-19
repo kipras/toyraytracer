@@ -6,5 +6,5 @@
 
 Vector3 * ray_point(Ray *ray, double dist)
 {
-    return vector3_add(&ray->start, vector3_multiply_length(&ray->direction, dist));
+    return vector3_add(&ray->origin, vector3_multiply_length(&ray->direction, dist));
 }

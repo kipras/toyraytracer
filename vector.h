@@ -4,25 +4,38 @@
 #include "main.h"
 
 
-inline Vector3 * vector3_alloc();
+typedef struct Vector3_s        Vector3;
+
+
+struct Vector3_s {
+    // 2D plane coordinates.
+    double x;
+    double y;
+
+    // Depth/height coordinate.
+    double z;
+};
+
+
+static inline Vector3 * vector3_alloc();
 
 /**
  * Adds the `addition` vector to the `base` vector.
  */
-inline void vector3_add_to(Vector3 base, Vector3 addition);
+static inline void vector3_add_to(Vector3 base, Vector3 addition);
 
 /**
  * Adds two given Vectors and returns a new Vector (which is the sum of them) or NULL if failed to allocate a new Vector.
  */
-inline Vector3 * vector3_add(Vector3 *v1, Vector3 *v2);
+static inline Vector3 * vector3_add(Vector3 *v1, Vector3 *v2);
 
 /**
  * Multiplies the given vector by the given multiplier and returns the result as a new Vector.
  */
-inline Vector3 * vector3_multiply_length(Vector3 *v, double multiplier);
+static inline Vector3 * vector3_multiply_length(Vector3 *v, double multiplier);
 
 
-inline Vector3 * vector3_alloc()
+static inline Vector3 * vector3_alloc()
 {
     Vector3 *vec;
     vec = ralloc(sizeof(Vector3));
@@ -32,7 +45,7 @@ inline Vector3 * vector3_alloc()
     return vec;
 }
 
-inline void vector3_add_to(Vector3 base, Vector3 addition)
+static inline void vector3_add_to(Vector3 base, Vector3 addition)
 {
     base.x += addition.x;
     base.y += addition.y;
@@ -40,7 +53,7 @@ inline void vector3_add_to(Vector3 base, Vector3 addition)
 }
 
 
-inline Vector3 * vector3_add(Vector3 *v1, Vector3 *v2)
+static inline Vector3 * vector3_add(Vector3 *v1, Vector3 *v2)
 {
     Vector3 *rvec;
     rvec = vector3_alloc();
@@ -50,7 +63,7 @@ inline Vector3 * vector3_add(Vector3 *v1, Vector3 *v2)
     return rvec;
 }
 
-inline Vector3 * vector3_multiply_length(Vector3 *v, double multiplier)
+static inline Vector3 * vector3_multiply_length(Vector3 *v, double multiplier)
 {
     Vector3 *rvec;
     rvec = vector3_alloc();

@@ -30,8 +30,6 @@
 
 typedef struct App_s            App;
 typedef struct Color_s          Color;
-typedef struct Vector3_s        Vector3;
-typedef struct Ray_s            Ray;
 
 
 struct App_s {
@@ -63,20 +61,6 @@ struct Color_s {
 #define COLOR_RED   {255,   0,   0}
 #define COLOR_GREEN {  0, 255,   0}
 #define COLOR_BLUE  {  0,   0, 255}
-
-struct Vector3_s {
-    // 2D plane coordinates.
-    double x;
-    double y;
-
-    // Depth/height coordinate.
-    double z;
-};
-
-struct Ray_s {
-    Vector3 start;
-    Vector3 direction;
-};
 
 
 void logErr(char *err);
