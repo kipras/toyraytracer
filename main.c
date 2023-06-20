@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "main.h"
 
@@ -123,6 +124,9 @@ void render_frame(App *app)
     uint32_t windowMidHeight = app->windowHeight >> 1;
     uint32_t windowMidWidth = app->windowWidth >> 1;
 
+    struct timespec t1, t2;
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+
     for (uint32_t screenY = 0; screenY < app->windowHeight; screenY++) {
         // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
         // Depth (z) remains unchanged at -1.
@@ -152,6 +156,13 @@ void render_frame(App *app)
             // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
         }
     }
+
+    clock_gettime(CLOCK_MONOTONIC, &t2);
+    double frame_duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_nsec - t1.tv_nsec) / 1000000000.0);
+    double fps = 1.0 / frame_duration;
+    double rps = fps * (app->windowHeight*app->windowWidth);
+    printf("FPS             = %f\n", fps);
+    printf("Rays per second = %f\n", rps);
 
     // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
     // SDL_RenderDrawPoint(app->renderer, x, y);
