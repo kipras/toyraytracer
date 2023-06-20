@@ -23,7 +23,7 @@ CCOPTS="${CCOPTS} -Werror"
 CCOPTS="${CCOPTS} -Wextra"
 # CCOPTS="${CCOPTS} -pedantic"
 # CCOPTS="${CCOPTS} -O2"
-# CCOPTS="${CCOPTS} -O3"
+CCOPTS="${CCOPTS} -O3"
 
 LINKEROPTS=""
 if [[ ${ENV_LINUX} == 1 ]]; then
