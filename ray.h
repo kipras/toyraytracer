@@ -24,8 +24,10 @@ struct Ray_s {
 Vector3 * ray_point(Ray *ray, double dist);
 
 /**
- * Returns `true` if `ray` hits `sphere`, otherwise returns `false`.
+ * If `ray` hits `sphere` - returns the distance from `ray` to `sphere` (i.e. to the point where `ray` hits `sphere` surface), which will
+ * be a non-negative value.
+ * If `ray` doesn't hit `sphere` - returns -1.
  */
-bool ray_hit_sphere(Ray *ray, Sphere *sphere);
+double ray_distance_to_sphere(Ray *ray, Sphere *sphere);
 
 #endif // __RAY_H__

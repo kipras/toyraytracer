@@ -136,7 +136,7 @@ void render_frame(App *app)
             Sphere *sphereList = app->scene.spheres;
             for (uint32_t i = 0; i < app->scene.spheresLength; i++) {
                 Sphere *sphere = &sphereList[i];
-                if (ray_hit_sphere(&ray, sphere)) {
+                if (ray_distance_to_sphere(&ray, sphere) >= 0) {
                     Color *color = &sphere->color;
                     SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
                     SDL_RenderDrawPoint(app->renderer, screenX, screenY);
