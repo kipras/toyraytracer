@@ -18,6 +18,7 @@
 
 #define WINDOW_WIDTH        200
 #define WINDOW_HEIGHT       200
+#define ANTIALIAS_FACTOR    2
 #define FOV                 90
 #define SCENE_SPHERES_MAX   20
 #define RAY_BOUNCES_MAX     20
@@ -112,8 +113,7 @@ void add_sphere(App *app, Sphere sphere);
 // void init_precalc(App *app);
 void init_precalc();
 void render(App *app);
-void render_frame(App *app);
-Color ray_trace(Scene *scene, Ray *ray);
+void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth, uint8_t aaFactor);
 bool keyboard_key_pressed();
 // float fast_inv_sqrt(float number);
 
