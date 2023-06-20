@@ -22,10 +22,10 @@
 #define SCENE_SPHERES_MAX   20
 #define RAY_BOUNCES_MAX     20
 
-// Wrappers around malloc()/free(). We call these (instead of calling free() directly) just in case we will decide to replace the standard
-// malloc()/free() with some other memory allocator later on - the we would only need to replace them here.
-#define ralloc(sz)          malloc(sz)
-#define rfree(p)            free(p)
+// // Wrappers around malloc()/free(). We call these (instead of calling free() directly) just in case we will decide to replace the standard
+// // malloc()/free() with some other memory allocator later on - the we would only need to replace them here.
+// #define ralloc(sz)          malloc(sz)
+// #define rfree(p)            free(p)
 
 
 typedef enum   MaterialType_e   MaterialType;
@@ -87,9 +87,9 @@ struct App_s {
 
     // // Direction       renderWindowPixelsCameraDirectionCache[WINDOW_HEIGHT * WINDOW_WIDTH];
 
-    // FOV can theoretically go up to the full 360 degrees. However, practically it usually goes up to no more than
-    // 120 degrees in graphics applications, so we use an 8 bit integer (up to 255) to store it.
-    uint8_t         fov;
+    // // FOV can theoretically go up to the full 360 degrees. However, practically it usually goes up to no more than
+    // // 120 degrees in graphics applications, so we use an 8 bit integer (up to 255) to store it.
+    // uint8_t         fov;
 };
 
 // struct Point3_s {
@@ -104,7 +104,7 @@ struct App_s {
 
 void log_err(char *err);
 
-App * create_app();
+void init_app(App *app);
 void init_screen(App *app);
 void init_world(App *app);
 // void init_precalc(App *app);
@@ -112,6 +112,6 @@ void init_precalc();
 void render(App *app);
 void render_frame(App *app);
 bool keyboard_key_pressed();
-float fast_inv_sqrt(float number);
+// float fast_inv_sqrt(float number);
 
 #endif // __MAIN_H__

@@ -7,14 +7,7 @@
 #include "vector.h"
 
 
-Vector3 * ray_point(Ray *ray, double dist)
-{
-    return vector3_add(&ray->origin, vector3_multiply_length(&ray->direction, dist));
-
-    // return vector3_add_p(&ray->origin, vector3_multiply_length(&ray->direction, dist));
-}
-
-double ray_distance_to_sphere(Ray *ray, Sphere *sphere)
+bool ray_hits_sphere(Ray *ray, Sphere *sphere, Vector3 *hitPoint)
 {
     // We determine if a ray hit a sphere using vector algebra.
     // We are solving this equation for t:
@@ -56,10 +49,15 @@ double ray_distance_to_sphere(Ray *ray, Sphere *sphere)
     double discriminant = (b*b) - (4*a*c);
 
     if (discriminant < 0) {
-        return -1;
+        return false;
     }
 
     // Ray hits the sphere. We want to return the closer (out of the two possible points) where ray hits the sphere.
     // To do that we use - out of the two (+-) solutions (to get the smaller value).
-    return (-b - sqrt(discriminant)) / (2*a);
+    double dist = (-b - sqrt(discriminant)) / (2*a);
+
+    // Set `hitPoint` to the point on the `sphere` where `ray` hits.
+    ray_point(ray, dist, hitPoint);
+
+    return true;
 }

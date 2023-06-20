@@ -32,13 +32,13 @@ int main()
 int WinMain()
 #endif // ENV_LINUX
 {
-    App *app;
+    App app;
 
-    app = create_app();
-    init_screen(app);
-    init_world(app);
-    init_precalc(app);
-    render(app);
+    init_app(&app);
+    init_screen(&app);
+    init_world(&app);
+    init_precalc(&app);
+    render(&app);
 
     return 0;
 }
@@ -48,22 +48,12 @@ void log_err(char *err)
     fprintf(stderr, "%s", err);
 }
 
-App * create_app()
+void init_app(App *app)
 {
-    App *app;
-
-    setbuf(stdout, NULL);
-
-    app = ralloc(sizeof(App));
-    if (app == NULL) {
-        log_err("Fatal error: could not allocate App. Out of memory?");
-        exit(1);
-    }
+    setbuf(stdout, NULL);   // Disable stdout buffering.
 
     app->window = NULL;
     app->renderer = NULL;
-
-    return app;
 }
 
 void init_screen(App *app)
@@ -94,7 +84,7 @@ void init_world(App *app)
     // app->camera.direction.hor  = 0;     // Look in the direction of y=1, x=0 (i.e. "up" on the horizontal plane)
     // app->camera.direction.vert = 0;     // Look "sideways" on the vertical plane
 
-    app->fov = FOV;
+    // app->fov = FOV;
 
     app->scene.spheres[0] = (Sphere){.center = {.x = 0, .y = 0, .z = -10}, .radius = 5, .materialType = Matte, .color = COLOR_RED};
     app->scene.spheresLength = 1;
@@ -147,9 +137,23 @@ void render_frame(App *app)
                 Sphere *sphereList = app->scene.spheres;
                 for (uint32_t i = 0; i < app->scene.spheresLength; i++) {
                     Sphere *sphere = &sphereList[i];
-                    if (ray_distance_to_sphere(&ray, sphere) >= 0) {
-                        Color *color = &sphere->color;
-                        SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
+                    Vector3 hitPoint;
+                    if (ray_hits_sphere(&ray, sphere, &hitPoint)) {
+                        // Calculate the sphere surface normal vector at `hitPoint`.
+                        // I.e. a normalized (unit) vector from `sphere` center to `hitPoint`.
+                        Vector3 *hpNormal = &hitPoint;
+                        vector3_subtract_from(hpNormal, &sphere->center);
+                        vector3_to_unit(hpNormal);
+
+                        Color color = {
+                            .red = floor((hpNormal->x + 1) * 128),
+                            .green = floor((hpNormal->y + 1) * 128),
+                            .blue = floor((hpNormal->z + 1) * 128),
+                        };
+                        SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
+
+                        // Color *color = &sphere->color;
+                        // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
                         SDL_RenderDrawPoint(app->renderer, screenX, screenY);
                     }
                 }
