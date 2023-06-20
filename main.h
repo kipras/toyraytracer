@@ -51,6 +51,7 @@ struct Color_s {
     uint8_t     green;
     uint8_t     blue;
 };
+#define COLOR_BLACK {  0,   0,   0}
 #define COLOR_RED   {255,   0,   0}
 #define COLOR_GREEN {  0, 255,   0}
 #define COLOR_BLUE  {  0,   0, 255}
@@ -111,6 +112,7 @@ void init_world(App *app);
 void init_precalc();
 void render(App *app);
 void render_frame(App *app);
+Color ray_trace(Scene *scene, Ray *ray);
 bool keyboard_key_pressed();
 // float fast_inv_sqrt(float number);
 

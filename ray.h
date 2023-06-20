@@ -24,10 +24,15 @@ struct Ray_s {
 static inline void ray_point(Ray *ray, double dist, Vector3 *point);
 
 /**
- * If `ray` hits `sphere` - returns true and sets `hitPoint` to the point on the `sphere` where `ray` hit it.
- * Otherwise returns false.
+ * Traces `ray` through the `scene` and returns the color for the pixel from which the ray originated on.
  */
-bool ray_hits_sphere(Ray *ray, Sphere *sphere, Vector3 *hitPoint);
+Color ray_trace(Scene *scene, Ray *ray);
+
+/**
+ * If `ray` hits `sphere` - the distance (>= 0) from the origin of the `ray` to the point on `sphere` where it hits.
+ * Otherwise returns -1.
+ */
+double ray_distance_to_sphere(Ray *ray, Sphere *sphere);
 
 
 static inline void ray_point(Ray *ray, double dist, Vector3 *point)

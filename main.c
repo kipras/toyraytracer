@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <locale.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -51,6 +52,8 @@ void log_err(char *err)
 void init_app(App *app)
 {
     setbuf(stdout, NULL);   // Disable stdout buffering.
+
+    setlocale(LC_NUMERIC, "");  // Set numeric locale, to get printf("%'f") to separate thousands in numbers with commas ","
 
     app->window = NULL;
     app->renderer = NULL;
@@ -134,29 +137,18 @@ void render_frame(App *app)
                 ray.direction.x = ((double)screenX / windowMidWidth) - 1;
                 // printf("ray.direction.x = %f\n", ray.direction.x);
 
-                Sphere *sphereList = app->scene.spheres;
-                for (uint32_t i = 0; i < app->scene.spheresLength; i++) {
-                    Sphere *sphere = &sphereList[i];
-                    Vector3 hitPoint;
-                    if (ray_hits_sphere(&ray, sphere, &hitPoint)) {
-                        // Calculate the sphere surface normal vector at `hitPoint`.
-                        // I.e. a normalized (unit) vector from `sphere` center to `hitPoint`.
-                        Vector3 *hpNormal = &hitPoint;
-                        vector3_subtract_from(hpNormal, &sphere->center);
-                        vector3_to_unit(hpNormal);
+                Color color = ray_trace(&app->scene, &ray);
+                SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
+                SDL_RenderDrawPoint(app->renderer, screenX, screenY);
 
-                        Color color = {
-                            .red = floor((hpNormal->x + 1) * 128),
-                            .green = floor((hpNormal->y + 1) * 128),
-                            .blue = floor((hpNormal->z + 1) * 128),
-                        };
-                        SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
+                // bool hit = ray_trace(&app->scene, &ray);
+                // if (hit) {
+                //     SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
 
-                        // Color *color = &sphere->color;
-                        // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
-                        SDL_RenderDrawPoint(app->renderer, screenX, screenY);
-                    }
-                }
+                //     // Color *color = &sphere->color;
+                //     // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
+                //     SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+                // }
 
                 // // Draw a two-direction gradient background image.
                 // Color color = {
@@ -185,7 +177,7 @@ void render_frame(App *app)
             output_clear_current_line();
         }
         printf("FPS             = %f\n", fps);
-        printf("Rays per second = %f\n", rps);
+        printf("Rays per second = %'f\n", rps);
 
         // Run rendering until the user presses any key.
         if (keyboard_key_pressed()) {

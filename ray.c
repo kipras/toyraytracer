@@ -1,3 +1,4 @@
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -7,7 +8,50 @@
 #include "vector.h"
 
 
-bool ray_hits_sphere(Ray *ray, Sphere *sphere, Vector3 *hitPoint)
+Color ray_trace(Scene *scene, Ray *ray)
+{
+    // Find the closest sphere that `ray` hits (if any) and store it in `minSphere` and the distance to it in `minDist`.
+    bool hitSomething = false;
+    double minDist = DBL_MAX;
+    Sphere *minSphere;
+    Sphere *sphereList = scene->spheres;
+    for (uint32_t i = 0; i < scene->spheresLength; i++) {
+        Sphere *sphere = &sphereList[i];
+        double dist = ray_distance_to_sphere(ray, sphere);
+        if (dist >= 0) {
+            hitSomething = true;
+            if (dist < minDist) {
+                minDist = dist;
+                minSphere = sphere;
+            }
+        }
+    }
+
+    if (! hitSomething) {
+        return (Color)COLOR_BLACK;
+    }
+
+    // return (Color)COLOR_RED;
+
+    // Set `hitPoint` to the point on `minSphere` where `ray` hits.
+    Vector3 hitPoint;
+    ray_point(ray, minDist, &hitPoint);
+
+    // Calculate the sphere surface normal vector at `hitPoint`.
+    // I.e. a normalized (unit) vector from `sphere` center to `hitPoint`.
+    Vector3 *hpNormal = &hitPoint;
+    vector3_subtract_from(hpNormal, &minSphere->center);
+    vector3_to_unit(hpNormal);
+
+    return (Color){
+        .red = floor((hpNormal->x + 1) * 128),
+        .green = floor((hpNormal->y + 1) * 128),
+        .blue = floor((hpNormal->z + 1) * 128),
+    };
+}
+
+// bool ray_hits_sphere(Ray *ray, Sphere *sphere, Vector3 *hitPoint)
+double ray_distance_to_sphere(Ray *ray, Sphere *sphere)
 {
     // We determine if a ray hit a sphere using vector algebra.
     // We are solving this equation for t:
@@ -49,15 +93,17 @@ bool ray_hits_sphere(Ray *ray, Sphere *sphere, Vector3 *hitPoint)
     double discriminant = (b*b) - (4*a*c);
 
     if (discriminant < 0) {
-        return false;
+        return -1;
     }
 
     // Ray hits the sphere. We want to return the closer (out of the two possible points) where ray hits the sphere.
     // To do that we use - out of the two (+-) solutions (to get the smaller value).
     double dist = (-b - sqrt(discriminant)) / (2*a);
 
-    // Set `hitPoint` to the point on the `sphere` where `ray` hits.
-    ray_point(ray, dist, hitPoint);
+    return dist;
 
-    return true;
+    // // Set `hitPoint` to the point on the `sphere` where `ray` hits.
+    // ray_point(ray, dist, hitPoint);
+
+    // return true;
 }
