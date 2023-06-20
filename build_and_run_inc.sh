@@ -51,7 +51,12 @@ fi
 
 "${CC}" \
     ${CCOPTS} \
-    "${SRC_DIR}/main.o" "${SRC_DIR}/ray.o" \
+    -c "${SRC_DIR}/renderer.c" \
+    -o "${SRC_DIR}/renderer.o"
+
+"${CC}" \
+    ${CCOPTS} \
+    "${SRC_DIR}/main.o" "${SRC_DIR}/ray.o" "${SRC_DIR}/renderer.o" \
     -o ${MAIN_BIN} \
     ${LINKEROPTS} \
     \

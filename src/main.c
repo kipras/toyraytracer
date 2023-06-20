@@ -8,8 +8,7 @@
 
 #include "main.h"
 
-#include "ray.h"
-#include "vector.h"
+#include "renderer.h"
 
 
 static inline void output_clear_current_line();
@@ -39,7 +38,8 @@ int WinMain()
     init_screen(&app);
     init_world(&app);
     init_precalc(&app);
-    render(&app);
+
+    run_render_loop(&app);  // The main rendering loop (infinite, until user presses any key).
 
     return 0;
 }
@@ -115,97 +115,22 @@ void init_precalc()
 {
 }
 
-void render(App *app)
+void run_render_loop(App *app)
 {
-    Ray ray = app->camera;
-
-    uint32_t upsampledWindowHeight = app->windowHeight * ANTIALIAS_FACTOR;
-    uint32_t upsampledWindowWidth = app->windowWidth * ANTIALIAS_FACTOR;
-
-    uint32_t upsampledWindowMidHeight = upsampledWindowHeight >> 1;
-    uint32_t upsampledWindowMidWidth = upsampledWindowWidth >> 1;
-
-    // The initial image into which we will render. This is an upsampled image - it has multiple pixels for each resulting pixel that will
-    // be drawn to the screen. We will run antialiasing to produce the final image from this upsampled image.
-    Color aaUpsampledImage[upsampledWindowHeight * upsampledWindowWidth];
-
-    Color finalImage[app->windowHeight * app->windowWidth];
-
-    struct timespec tstart, tnow;
+    struct timespec tstart;
     clock_gettime(CLOCK_MONOTONIC, &tstart);
 
+    Color img[app->windowHeight * app->windowWidth];
     for (uint64_t frames = 1; ; frames++) {
-        // Clear the frame into black.
-        SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
-        SDL_RenderClear(app->renderer);
-
-        for (uint32_t imgY = 0; imgY < upsampledWindowHeight; imgY++) {
-            // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
-            // Depth (z) remains unchanged at -1.
-            ray.direction.y = ((double)(upsampledWindowHeight - imgY) / upsampledWindowMidHeight) - 1;
-            // printf("\n");
-            // printf("ray.direction.y = %f\n", ray.direction.y);
-            uint32_t imgYArrOffset = imgY * upsampledWindowWidth;
-            for (uint32_t imgX = 0; imgX < upsampledWindowWidth; imgX++) {
-                ray.direction.x = ((double)imgX / upsampledWindowMidWidth) - 1;
-                // printf("ray.direction.x = %f\n", ray.direction.x);
-
-                Color color = ray_trace(&app->scene, &ray);
-                aaUpsampledImage[imgYArrOffset + imgX] = color;
-
-                // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-                // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
-
-                // bool hit = ray_trace(&app->scene, &ray);
-                // if (hit) {
-                //     SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-
-                //     // Color *color = &sphere->color;
-                //     // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
-                //     SDL_RenderDrawPoint(app->renderer, screenX, screenY);
-                // }
-
-                // // Draw a two-direction gradient background image.
-                // Color color = {
-                //     .red = (ray.direction.x + 1) * 128,
-                //     .green = (ray.direction.y + 1) * 128,
-                //     .blue = 0,
-                // };
-                // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-                // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
-            }
+        if (ANTIALIAS_FACTOR > 1) {
+            render_frame_img_antialiased(app, img, app->windowHeight, app->windowWidth);
+        } else {
+            render_frame_img(app, img, app->windowHeight, app->windowWidth);
         }
+        draw_img_to_screen(app, img, app->windowHeight, app->windowWidth);
 
-        // Produce the final image, by anti-aliasing the upsampled image.
-        image_antialias(aaUpsampledImage, finalImage, app->windowHeight, app->windowWidth, ANTIALIAS_FACTOR);
-
-        // Draw the final image on the screen.
-        for (uint32_t screenY = 0; screenY < app->windowHeight; screenY++) {
-            uint32_t screenYArrOffset = screenY*app->windowWidth;
-            for (uint32_t screenX = 0; screenX < app->windowWidth; screenX++) {
-                Color *color = &finalImage[screenYArrOffset + screenX];
-                SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
-                SDL_RenderDrawPoint(app->renderer, screenX, screenY);
-            }
-        }
-
-        SDL_RenderPresent(app->renderer);
-
-        // Calculate stats.
-        clock_gettime(CLOCK_MONOTONIC, &tnow);
-        double total_duration = (tnow.tv_sec - tstart.tv_sec) + ((tnow.tv_nsec - tstart.tv_nsec) / 1000000000.0);
-        double fps = (double)frames / total_duration;
-        double rps = fps * (app->windowHeight*app->windowWidth) * (ANTIALIAS_FACTOR*ANTIALIAS_FACTOR);
-
-        // Output stats (overwriting previous output).
-        if (frames > 1) {
-            output_go_up_one_line();
-            output_clear_current_line();
-            output_go_up_one_line();
-            output_clear_current_line();
-        }
-        printf("FPS             = %f\n", fps);
-        printf("Rays per second = %'f\n", rps);
+        // Calculate & output performance stats
+        output_stats(app, &tstart, frames);
 
         // Run rendering until the user presses any key.
         if (keyboard_key_pressed()) {
@@ -214,45 +139,27 @@ void render(App *app)
             return;
         }
     }
-
-    // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
-    // SDL_RenderDrawPoint(app->renderer, x, y);
 }
 
-void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth, uint8_t aaFactor)
+void output_stats(App *app, struct timespec *tstart, uint64_t frames)
 {
-    uint32_t srcWidth  = dstWidth*aaFactor;
-    uint16_t samplesPerPixel = aaFactor*aaFactor;
+    struct timespec tnow;
 
-    uint32_t srcYBase, srcXBase;
-    srcYBase = 0;
-    for (uint32_t dstY = 0; dstY < dstHeight; dstY++) {
-        srcXBase = 0;
-        for (uint32_t dstX = 0; dstX < dstWidth; dstX++) {
-            // Calculate the antialiased pixel in dstImg from multiple pixels in srcImg.
-            uint16_t red = 0, green = 0, blue = 0;
-            for (uint32_t srcY = srcYBase; srcY < srcYBase+aaFactor; srcY++) {
-                uint32_t srcYArrOffset = srcY*srcWidth;
-                for (uint32_t srcX = srcXBase; srcX < srcXBase+aaFactor; srcX++) {
-                    Color *srcColor = &srcImg[srcYArrOffset + srcX];
-                    red     += srcColor->red;
-                    green   += srcColor->green;
-                    blue    += srcColor->blue;
-                }
-            }
+    // Calculate stats.
+    clock_gettime(CLOCK_MONOTONIC, &tnow);
+    double total_duration = (tnow.tv_sec - tstart->tv_sec) + ((tnow.tv_nsec - tstart->tv_nsec) / 1000000000.0);
+    double fps = (double)frames / total_duration;
+    double rps = fps * (app->windowHeight*app->windowWidth) * (ANTIALIAS_FACTOR*ANTIALIAS_FACTOR);
 
-            // Calculate the resulting pixel color (averaged from the source pixel colors).
-            if (aaFactor == 2) {
-                // If antialiasing factor is a power of 2 - then we can use the faster shift-right instead of division.
-                dstImg[dstY*dstWidth + dstX] = (Color){.red = red >> 2, .green = green >> 2, .blue = blue >> 2};
-            } else {
-                dstImg[dstY*dstWidth + dstX] = (Color){.red = red/samplesPerPixel, .green = green/samplesPerPixel, .blue = blue/samplesPerPixel};
-            }
-
-            srcXBase += aaFactor;
-        }
-        srcYBase += aaFactor;
+    // Output stats (overwriting previous output).
+    if (frames > 1) {
+        output_go_up_one_line();
+        output_clear_current_line();
+        output_go_up_one_line();
+        output_clear_current_line();
     }
+    printf("FPS             = %f\n", fps);
+    printf("Rays per second = %'f\n", rps);
 }
 
 bool keyboard_key_pressed()

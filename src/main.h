@@ -18,7 +18,13 @@
 
 #define WINDOW_WIDTH        200
 #define WINDOW_HEIGHT       200
+
+// How many vertical/horizontal pixels will be rendered and averaged to produce one resulting pixel, when anti-aliasing.
+// For example, if ANTIALIAS_FACTOR is 2 - then 4 pixels (2 by 2) will be rendered to produce one resulting pixel.
+//
+// Set ANTIALIAS_FACTOR to 1 to disable anti-aliasing.
 #define ANTIALIAS_FACTOR    2
+
 #define FOV                 90
 #define SCENE_SPHERES_MAX   20
 #define RAY_BOUNCES_MAX     20
@@ -112,8 +118,8 @@ void init_world(App *app);
 void add_sphere(App *app, Sphere sphere);
 // void init_precalc(App *app);
 void init_precalc();
-void render(App *app);
-void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth, uint8_t aaFactor);
+void run_render_loop(App *app);
+void output_stats(App *app, struct timespec *tstart, uint64_t frames);
 bool keyboard_key_pressed();
 // float fast_inv_sqrt(float number);
 
