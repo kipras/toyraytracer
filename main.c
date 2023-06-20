@@ -11,6 +11,10 @@
 #include "vector.h"
 
 
+static inline void output_clear_current_line();
+static inline void output_go_up_one_line();
+
+
 bool debug = DEBUG;
 #define DEBUG_ANGLE_TO_CC   debug && 1
 
@@ -78,9 +82,13 @@ void init_screen(App *app)
 
 void init_world(App *app)
 {
-    // app->camera.from.x = 0;
-    // app->camera.from.y = 0;
-    // app->camera.from.z = 0;
+    app->camera = (Ray){
+        .origin     = (Vector3){.x = 0, .y = 0, .z = 0},
+        .direction  = (Vector3){.x = 0, .y = 0, .z = -1},
+    };
+
+    // app->camera.origin      = (Vector3){.x = 0, .y = 0, .z = 0};
+    // app->camera.direction   = (Vector3){.x = 0, .y = 0, .z = -1};
 
     // // Camera is looking parallel to the ground (i.e. z=0 (from the range [-1; 1])), in the direction of y=1, x=0 (i.e. "up")
     // app->camera.direction.hor  = 0;     // Look in the direction of y=1, x=0 (i.e. "up" on the horizontal plane)
@@ -109,65 +117,105 @@ void render(App *app)
     // SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, 255);
     // SDL_RenderDrawPoint(app->renderer, WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
     // SDL_RenderPresent(app->renderer);
-
-    SDL_Delay(3000);
 }
 
 void render_frame(App *app)
 {
-    Vector3 cameraPosition = {.x = 0, .y = 0, .z = 0};
-    Ray ray = {
-        .origin = cameraPosition,
-        .direction = {.x = 0, .y = 0, .z = -1},
-    };
+    Ray ray = app->camera;
 
     uint32_t windowMidHeight = app->windowHeight >> 1;
     uint32_t windowMidWidth = app->windowWidth >> 1;
 
-    struct timespec t1, t2;
-    clock_gettime(CLOCK_MONOTONIC, &t1);
+    struct timespec tstart, tnow;
+    clock_gettime(CLOCK_MONOTONIC, &tstart);
 
-    for (uint32_t screenY = 0; screenY < app->windowHeight; screenY++) {
-        // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
-        // Depth (z) remains unchanged at -1.
-        ray.direction.y = ((double)screenY / windowMidHeight) - 1;
-        // printf("\n");
-        // printf("ray.direction.y = %f\n", ray.direction.y);
-        for (uint32_t screenX = 0; screenX < app->windowWidth; screenX++) {
-            ray.direction.x = ((double)screenX / windowMidWidth) - 1;
-            // printf("ray.direction.x = %f\n", ray.direction.x);
+    for (uint64_t frames = 1; ; frames++) {
+        // Clear the frame into black.
+        SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
+        SDL_RenderClear(app->renderer);
 
-            Sphere *sphereList = app->scene.spheres;
-            for (uint32_t i = 0; i < app->scene.spheresLength; i++) {
-                Sphere *sphere = &sphereList[i];
-                if (ray_distance_to_sphere(&ray, sphere) >= 0) {
-                    Color *color = &sphere->color;
-                    SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
-                    SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+        for (uint32_t screenY = 0; screenY < app->windowHeight; screenY++) {
+            // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
+            // Depth (z) remains unchanged at -1.
+            ray.direction.y = ((double)screenY / windowMidHeight) - 1;
+            // printf("\n");
+            // printf("ray.direction.y = %f\n", ray.direction.y);
+            for (uint32_t screenX = 0; screenX < app->windowWidth; screenX++) {
+                ray.direction.x = ((double)screenX / windowMidWidth) - 1;
+                // printf("ray.direction.x = %f\n", ray.direction.x);
+
+                Sphere *sphereList = app->scene.spheres;
+                for (uint32_t i = 0; i < app->scene.spheresLength; i++) {
+                    Sphere *sphere = &sphereList[i];
+                    if (ray_distance_to_sphere(&ray, sphere) >= 0) {
+                        Color *color = &sphere->color;
+                        SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
+                        SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+                    }
                 }
-            }
 
-            // Color color = {
-            //     .red = (ray.direction.x + 1) * 128,
-            //     .green = (ray.direction.y + 1) * 128,
-            //     .blue = 0,
-            // };
-            // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-            // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+                // // Draw a two-direction gradient background image.
+                // Color color = {
+                //     .red = (ray.direction.x + 1) * 128,
+                //     .green = (ray.direction.y + 1) * 128,
+                //     .blue = 0,
+                // };
+                // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
+                // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+            }
+        }
+
+        SDL_RenderPresent(app->renderer);
+
+        // Calculate stats.
+        clock_gettime(CLOCK_MONOTONIC, &tnow);
+        double total_duration = (tnow.tv_sec - tstart.tv_sec) + ((tnow.tv_nsec - tstart.tv_nsec) / 1000000000.0);
+        double fps = (double)frames / total_duration;
+        double rps = fps * (app->windowHeight*app->windowWidth);
+
+        // Output stats (overwriting previous output).
+        if (frames > 1) {
+            output_go_up_one_line();
+            output_clear_current_line();
+            output_go_up_one_line();
+            output_clear_current_line();
+        }
+        printf("FPS             = %f\n", fps);
+        printf("Rays per second = %f\n", rps);
+
+        // Run rendering until the user presses any key.
+        if (keyboard_key_pressed()) {
+            printf("User pressed a key, exiting.\n");
+            // SDL_Delay(500);
+            return;
         }
     }
 
-    clock_gettime(CLOCK_MONOTONIC, &t2);
-    double frame_duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_nsec - t1.tv_nsec) / 1000000000.0);
-    double fps = 1.0 / frame_duration;
-    double rps = fps * (app->windowHeight*app->windowWidth);
-    printf("FPS             = %f\n", fps);
-    printf("Rays per second = %f\n", rps);
-
     // SDL_SetRenderDrawColor(app->renderer, color->red, color->green, color->blue, 255);
     // SDL_RenderDrawPoint(app->renderer, x, y);
+}
 
-    SDL_RenderPresent(app->renderer);
+bool keyboard_key_pressed()
+{
+    SDL_Event event;
+
+    // Process all events currently in the event queue.
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_KEYDOWN) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static inline void output_clear_current_line()
+{
+    printf("\33[2K\r"); // VT100 escape code for clearing the current output line + LF (carriage return).
+}
+
+static inline void output_go_up_one_line()
+{
+    printf("\033[A");   // VT100 escape code to go one line up in the output.
 }
 
 // float fast_inv_sqrt(float number)

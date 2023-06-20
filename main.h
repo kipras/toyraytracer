@@ -28,15 +28,16 @@
 #define rfree(p)            free(p)
 
 
-#include "vector.h"
-
-
 typedef enum   MaterialType_e   MaterialType;
 typedef struct Color_s          Color;
 typedef struct Sphere_s         Sphere;
 typedef struct Scene_s          Scene;
 typedef struct App_s            App;
 // typedef struct Point3_s         Point3;
+
+
+#include "ray.h"
+#include "vector.h"
 
 
 enum MaterialType_e {
@@ -78,7 +79,7 @@ struct App_s {
     uint32_t        windowHeight;
 
     Scene           scene;
-    // Ray3            camera;
+    Ray             camera;
 
     // // Precalculated camera angles for screen pixels
     // Angle           renderWindowPixelsHorAngles[WINDOW_WIDTH];
@@ -110,6 +111,7 @@ void init_world(App *app);
 void init_precalc();
 void render(App *app);
 void render_frame(App *app);
+bool keyboard_key_pressed();
 float fast_inv_sqrt(float number);
 
 #endif // __MAIN_H__

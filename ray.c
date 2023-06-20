@@ -51,9 +51,9 @@ double ray_distance_to_sphere(Ray *ray, Sphere *sphere)
 
     double a = vector3_dot(&ray->direction, &ray->direction);
     double b = 2*vector3_dot(&ray->direction, &ray_orig_and_sphere_diff);
-    double c = vector3_dot(&ray_orig_and_sphere_diff, &ray_orig_and_sphere_diff) - pow(sphere->radius, 2);
+    double c = vector3_dot(&ray_orig_and_sphere_diff, &ray_orig_and_sphere_diff) - (sphere->radius*sphere->radius);
 
-    double discriminant = pow(b, 2) - (4*a*c);
+    double discriminant = (b*b) - (4*a*c);
 
     if (discriminant < 0) {
         return -1;
