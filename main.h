@@ -108,6 +108,7 @@ void log_err(char *err);
 void init_app(App *app);
 void init_screen(App *app);
 void init_world(App *app);
+void add_sphere(App *app, Sphere sphere);
 // void init_precalc(App *app);
 void init_precalc();
 void render(App *app);

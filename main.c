@@ -89,8 +89,25 @@ void init_world(App *app)
 
     // app->fov = FOV;
 
-    app->scene.spheres[0] = (Sphere){.center = {.x = 0, .y = 0, .z = -10}, .radius = 5, .materialType = Matte, .color = COLOR_RED};
-    app->scene.spheresLength = 1;
+    // app->scene.spheres[0] = (Sphere){.center = {.x = 0, .y = 0, .z = -10}, .radius = 5, .materialType = Matte, .color = COLOR_RED};
+    // app->scene.spheresLength = 1;
+
+    app->scene.spheresLength = 0;
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -15}, .radius = 5, .materialType = Matte, .color = COLOR_RED});        // Center sphere.
+    add_sphere(app, (Sphere){.center = {.x = 12, .y = 8.5, .z = -20}, .radius = 5, .materialType = Matte, .color = COLOR_RED});     // Top right sphere.
+    add_sphere(app, (Sphere){.center = {.x = -9, .y = 0, .z = -15}, .radius = 2.5, .materialType = Matte, .color = COLOR_RED});     // Center left sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = -120, .z = -160}, .radius = 160, .materialType = Matte, .color = COLOR_RED});  // Floor sphere.
+}
+
+void add_sphere(App *app, Sphere sphere)
+{
+    if (app->scene.spheresLength == SCENE_SPHERES_MAX) {
+        log_err("Cannot add another sphere to the scene - scene already has maximum spheres");
+        exit(1);
+    }
+
+    app->scene.spheres[app->scene.spheresLength] = sphere;
+    app->scene.spheresLength++;
 }
 
 // void init_precalc(App *app)
@@ -130,7 +147,7 @@ void render_frame(App *app)
         for (uint32_t screenY = 0; screenY < app->windowHeight; screenY++) {
             // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
             // Depth (z) remains unchanged at -1.
-            ray.direction.y = ((double)screenY / windowMidHeight) - 1;
+            ray.direction.y = ((double)(app->windowHeight - screenY) / windowMidHeight) - 1;
             // printf("\n");
             // printf("ray.direction.y = %f\n", ray.direction.y);
             for (uint32_t screenX = 0; screenX < app->windowWidth; screenX++) {

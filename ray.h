@@ -24,7 +24,7 @@ struct Ray_s {
 static inline void ray_point(Ray *ray, double dist, Vector3 *point);
 
 /**
- * Traces `ray` through the `scene` and returns the color for the pixel from which the ray originated on.
+ * Traces `ray` through the `scene` and returns the resulting color for the pixel from which the ray originated on.
  */
 Color ray_trace(Scene *scene, Ray *ray);
 
