@@ -5,13 +5,14 @@ set -e
 
 
 DIR=$(realpath $(dirname "${0}"))
+SRC_DIR="src"
 
 #    `SDL2-2.24.0/x86_64-w64-mingw32/bin/sdl2-config --cflags --libs` \
 
 if [[ ${ENV_LINUX} == 1 ]]; then
-    echo "#define ENV_LINUX 1" > envconfig.h
+    echo "#define ENV_LINUX 1" > "envconfig.h"
 else
-    echo "#define ENV_LINUX 0" > envconfig.h
+    echo "#define ENV_LINUX 0" > "envconfig.h"
 fi
 
 CCOPTS=""
@@ -33,24 +34,24 @@ fi
 
 MAIN_BIN=""
 if [[ ${ENV_LINUX} == 1 ]]; then
-    MAIN_BIN='./main'
+    MAIN_BIN="./${SRC_DIR}/main"
 else
-    MAIN_BIN='./main.exe'
+    MAIN_BIN="./${SRC_DIR}/main.exe"
 fi
 
 "${CC}" \
     ${CCOPTS} \
-    -c 'main.c' \
-    -o 'main.o'
+    -c "${SRC_DIR}/main.c" \
+    -o "${SRC_DIR}/main.o"
 
 "${CC}" \
     ${CCOPTS} \
-    -c 'ray.c' \
-    -o 'ray.o'
+    -c "${SRC_DIR}/ray.c" \
+    -o "${SRC_DIR}/ray.o"
 
 "${CC}" \
     ${CCOPTS} \
-    'main.o' 'ray.o' \
+    "${SRC_DIR}/main.o" "${SRC_DIR}/ray.o" \
     -o ${MAIN_BIN} \
     ${LINKEROPTS} \
     \
