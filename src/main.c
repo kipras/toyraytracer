@@ -1,6 +1,10 @@
 #include <assert.h>
 #include <locale.h>
+
+// Need _USE_MATH_DEFINES to have <math.h> export the M_PI constant.
+#define _USE_MATH_DEFINES
 #include <math.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,22 +12,21 @@
 
 #include "main.h"
 
+#include "random.h"
 #include "renderer.h"
+#include "types.h"
+#include "vector.h"
 
+
+void test_random_point_in_unit_sphere_algorithms_performance();
+void test_random_point_in_unit_sphere__random_algo(Vector3 *pArr, uint64_t iterations);
+void test_random_point_in_unit_sphere__trigonometric_algo(Vector3 *pArr, uint64_t iterations);
 
 static inline void output_clear_current_line();
 static inline void output_go_up_one_line();
 
 
-bool debug = DEBUG;
-#define DEBUG_ANGLE_TO_CC   debug && 1
-
-#define dbg(...) if (debug) { printf(__VA_ARGS__); }
-
-#define assert2(exp, msg) if (! (exp)) { printf("%s", msg); exit(1); }
-
-
-double piDiv2 = (double)PI / 2;
+double piDiv2 = (double)M_PI / 2;
 
 
 #if defined(ENV_LINUX) && ENV_LINUX
@@ -54,6 +57,11 @@ void init_app(App *app)
     setbuf(stdout, NULL);   // Disable stdout buffering.
 
     setlocale(LC_NUMERIC, "");  // Set numeric locale, to get printf("%'f") to separate thousands in numbers with commas ","
+
+    // Seed the random number generator.
+    struct timespec tnow;
+    clock_gettime(CLOCK_MONOTONIC, &tnow);
+    random_seed(tnow.tv_nsec);
 
     app->window = NULL;
     app->renderer = NULL;
@@ -89,14 +97,17 @@ void init_world(App *app)
 
     // app->fov = FOV;
 
-    // app->scene.spheres[0] = (Sphere){.center = {.x = 0, .y = 0, .z = -10}, .radius = 5, .materialType = Matte, .color = COLOR_RED};
-    // app->scene.spheresLength = 1;
+    // app->scene.groundHeight = 0;
+    // app->scene.groundColor = (Color)COLOR_GROUND;
+
+    // app->scene.skyHeight = 0;
+    // app->scene.skyColor = (Color)COLOR_SKY;
 
     app->scene.spheresLength = 0;
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -15}, .radius = 5, .materialType = Matte, .color = COLOR_RED});        // Center sphere.
-    add_sphere(app, (Sphere){.center = {.x = 12, .y = 8.5, .z = -20}, .radius = 5, .materialType = Matte, .color = COLOR_RED});     // Top right sphere.
-    add_sphere(app, (Sphere){.center = {.x = -9, .y = 0, .z = -15}, .radius = 2.5, .materialType = Matte, .color = COLOR_RED});     // Center left sphere (small).
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = -120, .z = -160}, .radius = 160, .materialType = Matte, .color = COLOR_RED});  // Floor sphere.
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -15}, .radius = 5, .material = &matte, .color = COLOR_RED});        // Center sphere.
+    add_sphere(app, (Sphere){.center = {.x = 12, .y = 8.5, .z = -20}, .radius = 5, .material = &matte, .color = COLOR_RED});     // Top right sphere.
+    add_sphere(app, (Sphere){.center = {.x = -9, .y = 0, .z = -15}, .radius = 2.5, .material = &matte, .color = COLOR_RED});     // Center left sphere (small).
+    // add_sphere(app, (Sphere){.center = {.x = 0, .y = -120, .z = -160}, .radius = 160, .material = &matte, .color = COLOR_RED});  // Floor sphere.
 }
 
 void add_sphere(App *app, Sphere sphere)

@@ -2,13 +2,11 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "main.h"
-
 #include "ray.h"
 #include "vector.h"
 
 
-Color ray_trace(Scene *scene, Ray *ray)
+bool ray_trace(Scene *scene, Ray *ray, Color *color)
 {
     // Find the closest sphere that `ray` hits (if any) and store it in `minSphere` and the distance to it in `minDist`.
     bool hitSomething = false;
@@ -28,26 +26,29 @@ Color ray_trace(Scene *scene, Ray *ray)
     }
 
     if (! hitSomething) {
-        return (Color)COLOR_BLACK;
+        return false;
     }
-
-    // return (Color)COLOR_RED;
 
     // Set `hitPoint` to the point on `minSphere` where `ray` hits.
     Vector3 hitPoint;
     ray_point(ray, minDist, &hitPoint);
 
+    Ray scatteredRay;
+    minSphere->material->scatter(ray, &scatteredRay);
+
     // Calculate the sphere surface normal vector at `hitPoint`.
-    // I.e. a normalized (unit) vector from `sphere` center to `hitPoint`.
+    // I.e. a normalized (unit) vector from `minSphere->center` to `hitPoint`.
     Vector3 *hpNormal = &hitPoint;
     vector3_subtract_from(hpNormal, &minSphere->center);
     vector3_to_unit(hpNormal);
 
-    return (Color){
+    *color = (Color){
         .red = floor((hpNormal->x + 1) * 128),
         .green = floor((hpNormal->y + 1) * 128),
         .blue = floor((hpNormal->z + 1) * 128),
     };
+
+    return true;
 }
 
 // bool ray_hits_sphere(Ray *ray, Sphere *sphere, Vector3 *hitPoint)

@@ -1,15 +1,17 @@
 #ifndef __RAY_H__
 #define __RAY_H__
 
-#include "main.h"
-
-#include "vector.h"
-
 
 #define RAY_BOUNCES_MAX     20
 
 
 typedef struct Ray_s            Ray;
+
+
+// #include "main.h"
+
+#include "types.h"
+#include "vector.h"
 
 
 struct Ray_s {
@@ -24,9 +26,11 @@ struct Ray_s {
 static inline void ray_point(Ray *ray, double dist, Vector3 *point);
 
 /**
- * Traces `ray` through the `scene` and returns the resulting color for the pixel from which the ray originated on.
+ * Traces `ray` through the `scene`.
+ * If the `ray` hits something (and is traced successfully) - then returns true and stores the resulting color in `color`.
+ * Otherwise - returns false.
  */
-Color ray_trace(Scene *scene, Ray *ray);
+bool ray_trace(Scene *scene, Ray *ray, Color *color);
 
 /**
  * If `ray` hits `sphere` - the distance (>= 0) from the origin of the `ray` to the point on `sphere` where it hits.
