@@ -41,12 +41,15 @@ all: $(main_bin)
 $(main_bin): $(objects)
 	$(cc) ${cc_opts} $(objects) -o ${main_bin} ${linker_opts}
 
+envconfig.h:
+	echo "#define ENV_LINUX ${ENV_LINUX}" > "envconfig.h";
+
 # Generate C source files header dependencies (.d files) for "make".
-%.d: %.c
+%.d: %.c envconfig.h
 	$(cc) -MM -c $(cc_opts) $< > $@
 
 # Need to make some changes to the generated .d file.
-	sed -i 's/src\/..\/envconfig.h//' $@
+# sed -i 's/src\/..\/envconfig.h//' $@
 	mv $@ $@.tmp
 	(echo -n "$(src_dir)/" && cat $@.tmp) > $@
 	rm $@.tmp
@@ -58,11 +61,8 @@ ifneq ($(MAKECMDGOALS), debug_env)
 endif
 endif
 
-%.o: %.c %.d
+%.o: %.c %.d envconfig.h
 	$(cc) -c $(cc_opts) $< -o $@
-
-$(src_dir)/envconfig.h:
-	echo "#define ENV_LINUX $(ENV_LINUX)" > "envconfig.h"
 
 
 .PHONY: clean debug_env
@@ -70,6 +70,7 @@ clean:
 	rm -rf $(objects)
 	rm -rf $(header_deps)
 	rm -f $(main_bin)
+	rm -f envconfig.h
 
 debug_env:
 	@echo "CC = $(CC)"

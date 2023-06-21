@@ -16,7 +16,6 @@ else
     MAIN_BIN="${SRC_DIR}/main.exe"
 fi
 
-
-CC=${CC} ENV_LINUX=${ENV_LINUX} make
+CC=${CC} ENV_LINUX=${ENV_LINUX} make -j8
 
 ${MAIN_BIN}
