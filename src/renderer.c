@@ -1,10 +1,10 @@
 #include "main.h"
 
+#include "color.h"
 #include "renderer.h"
 
 
-static inline Color render_background_pixel(App *app, Ray *ray);
-static inline Color gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val);
+// static inline Color render_background_pixel(App *app, Ray *ray);
 
 /**
  * Anti-aliases (larger) `srcImg` into `dstImg`, by averaging ANTIALIAS_FACTOR^2 pixels into 1 pixel (using grid algorithm).
@@ -45,53 +45,45 @@ void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidt
 
             Color color;
             if (! ray_trace(&app->scene, &ray, &color)) {
-                // Ray didn't hit anything - rendering background instead.
-                color = render_background_pixel(app, &ray);
+                color = (Color)COLOR_BLACK;
+
+                // // Ray didn't hit anything - rendering background instead.
+                // color = render_background_pixel(app, &ray);
             }
             img[imgYArrOffset + imgX] = color;
         }
     }
 }
 
-static Color skyTopColor = (Color)COLOR_SKY_TOP;
-static Color skyBottomColor = (Color)COLOR_SKY_BOTTOM;
+// static inline Color render_background_pixel(App *app, Ray *ray)
+// {
+//     if (ray->direction.y > app->camera.origin.y) {
+//         // Draw a sky pixel.
+//         return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
+//     } else {
+//         // Draw a ground pixel.
+//         return (Color)COLOR_WHITE;
+//         // return (Color)COLOR_GROUND;
+//     }
 
-static inline Color render_background_pixel(App *app, Ray *ray)
-{
-    if (ray->direction.y > app->camera.origin.y) {
-        // Draw a sky pixel.
-        return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
-    } else {
-        // Draw a ground pixel.
-        return (Color)COLOR_GROUND;
-    }
+//     // if (ray->direction.y > app->camera.origin.y) {
+//     //     // Draw a sky pixel.
+//     //     return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
+//     // } else {
+//     //     // Draw a ground pixel.
+//     //     return (Color)COLOR_BLACK;
+//     //     // return (Color)COLOR_GROUND;
+//     // }
 
-    // // Draw a two-direction gradient background image.
-    // Color color = {
-    //     .red = (ray.direction.x + 1) * 128,
-    //     .green = (ray.direction.y + 1) * 128,
-    //     .blue = 0,
-    // };
-    // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-    // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
-}
-
-static inline Color gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val)
-{
-    int16_t redColorRange = colorTo->red - colorFrom->red;
-    int16_t greenColorRange = colorTo->green - colorFrom->green;
-    int16_t blueColorRange = colorTo->blue - colorFrom->blue;
-
-    double valRange = valTo - valFrom;
-    double valWithinRange = val - valFrom;
-    double rangePortion = valWithinRange / valRange;
-
-    return (Color){
-        .red = colorFrom->red + (redColorRange * rangePortion),
-        .green = colorFrom->green + (greenColorRange * rangePortion),
-        .blue = colorFrom->blue + (blueColorRange * rangePortion),
-    };
-}
+//     // // Draw a two-direction gradient background image.
+//     // Color color = {
+//     //     .red = (ray.direction.x + 1) * 128,
+//     //     .green = (ray.direction.y + 1) * 128,
+//     //     .blue = 0,
+//     // };
+//     // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
+//     // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+// }
 
 static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth)
 {

@@ -1,6 +1,4 @@
 #include <float.h>
-#include <math.h>
-#include <stdio.h>
 
 #include "ray.h"
 #include "vector.h"
@@ -33,20 +31,7 @@ bool ray_trace(Scene *scene, Ray *ray, Color *color)
     Vector3 hitPoint;
     ray_point(ray, minDist, &hitPoint);
 
-    Ray scatteredRay;
-    minSphere->material->scatter(ray, &scatteredRay);
-
-    // Calculate the sphere surface normal vector at `hitPoint`.
-    // I.e. a normalized (unit) vector from `minSphere->center` to `hitPoint`.
-    Vector3 *hpNormal = &hitPoint;
-    vector3_subtract_from(hpNormal, &minSphere->center);
-    vector3_to_unit(hpNormal);
-
-    *color = (Color){
-        .red = floor((hpNormal->x + 1) * 128),
-        .green = floor((hpNormal->y + 1) * 128),
-        .blue = floor((hpNormal->z + 1) * 128),
-    };
+    *color = minSphere->material->hit(scene, ray, minSphere, &hitPoint);
 
     return true;
 }
@@ -99,7 +84,19 @@ double ray_distance_to_sphere(Ray *ray, Sphere *sphere)
 
     // Ray hits the sphere. We want to return the closer (out of the two possible points) where ray hits the sphere.
     // To do that we use - out of the two (+-) solutions (to get the smaller value).
-    double dist = (-b - sqrt(discriminant)) / (2*a);
+    //
+    // However, there is a nuance, regarding the sky sphere - when hitting the sky sphere, the rays will always hit from the _inside_ of
+    // the sky sphere. In that case: sqrt(discriminant) > -b. So  the smaller value is negative, but the larger value is positive.
+    // So we do an additional check for this, and return the larger value in this case.
+    double sqrtDiscriminant = sqrt(discriminant);
+    double signedSqrtDiscriminant;
+    if (sqrtDiscriminant > -b) {
+        signedSqrtDiscriminant = sqrtDiscriminant;
+    } else {
+        signedSqrtDiscriminant = -sqrtDiscriminant;
+    }
+
+    double dist = (-b + signedSqrtDiscriminant) / (2*a);
 
     return dist;
 

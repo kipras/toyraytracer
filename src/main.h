@@ -20,8 +20,8 @@
 
 #define assert2(exp, msg) if (! (exp)) { printf("%s", msg); exit(1); }
 
-#define WINDOW_WIDTH        200
-#define WINDOW_HEIGHT       200
+#define WINDOW_WIDTH        400
+#define WINDOW_HEIGHT       400
 
 // How many vertical/horizontal pixels will be rendered and averaged to produce one resulting pixel, when anti-aliasing.
 // For example, if ANTIALIAS_FACTOR is 2 - then 4 pixels (2 by 2) will be rendered to produce one resulting pixel.
@@ -72,8 +72,6 @@ void init_app(App *app);
 void init_screen(App *app);
 void init_world(App *app);
 void add_sphere(App *app, Sphere sphere);
-// void init_precalc(App *app);
-void init_precalc();
 void run_render_loop(App *app);
 void output_stats(App *app, struct timespec *tstart, uint64_t frames);
 bool keyboard_key_pressed();

@@ -40,7 +40,6 @@ int WinMain()
     init_app(&app);
     init_screen(&app);
     init_world(&app);
-    init_precalc(&app);
 
     run_render_loop(&app);  // The main rendering loop (infinite, until user presses any key).
 
@@ -104,10 +103,13 @@ void init_world(App *app)
     // app->scene.skyColor = (Color)COLOR_SKY;
 
     app->scene.spheresLength = 0;
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -15}, .radius = 5, .material = &matte, .color = COLOR_RED});        // Center sphere.
-    add_sphere(app, (Sphere){.center = {.x = 12, .y = 8.5, .z = -20}, .radius = 5, .material = &matte, .color = COLOR_RED});     // Top right sphere.
-    add_sphere(app, (Sphere){.center = {.x = -9, .y = 0, .z = -15}, .radius = 2.5, .material = &matte, .color = COLOR_RED});     // Center left sphere (small).
-    // add_sphere(app, (Sphere){.center = {.x = 0, .y = -120, .z = -160}, .radius = 160, .material = &matte, .color = COLOR_RED});  // Floor sphere.
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -15}, .radius = 5, .material = &matShaded, .color = COLOR_RED});        // Center sphere.
+    add_sphere(app, (Sphere){.center = {.x = 12, .y = 8.5, .z = -20}, .radius = 5, .material = &matShaded, .color = COLOR_RED});     // Top right sphere.
+    add_sphere(app, (Sphere){.center = {.x = -9, .y = 0, .z = -15}, .radius = 2.5, .material = &matShaded, .color = COLOR_RED});     // Center left sphere (small).
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = -1000, .z = -200}, .radius = 1000, .material = &matGround, .color = COLOR_GROUND});  // Ground sphere.
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 10000, .material = &matSky, .color = COLOR_SKY});  // Sky sphere.
 }
 
 void add_sphere(App *app, Sphere sphere)
@@ -119,11 +121,6 @@ void add_sphere(App *app, Sphere sphere)
 
     app->scene.spheres[app->scene.spheresLength] = sphere;
     app->scene.spheresLength++;
-}
-
-// void init_precalc(App *app)
-void init_precalc()
-{
 }
 
 void run_render_loop(App *app)
