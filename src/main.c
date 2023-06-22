@@ -156,6 +156,12 @@ static void run_render_loop(App *app)
     clock_gettime(CLOCK_MONOTONIC, &tstart);
 
     Color32 allFrames[app->windowHeight * app->windowWidth];        // NOTE: should this perhaps be Color64 (to avoid overflow/cap) ?
+
+    // Have to clear the allFrames buffer first. The other buffers we don't need to clear, because we will be directly writing images to
+    // them. But the allFrames buffer will be _appended to_ instead of _set_, so we must make sure that each color of each pixel starts
+    // from 0
+    memset(&allFrames, 0, sizeof(Color32) * app->windowHeight * app->windowWidth);
+
     Color32 frameImg[app->windowHeight * app->windowWidth];
     Color blendedImg[app->windowHeight * app->windowWidth];
     for (uint32_t frames = 1; ; frames++) {
