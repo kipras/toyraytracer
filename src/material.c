@@ -108,12 +108,26 @@ static Color32 matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *s
     // printf("bouncedRayIncomingLight = %f\n", bouncedRayIncomingLight);
 
     Color *sphereColor = &sphere->color;
+
+    // We're using 64 bits to store the resulting colors after multiplication, to avoid overflow.
+    // Though not sure if that is really needed, because we're multiplying sphere colors that should be 8 bit (even if they're stored as
+    // 32 bit) with a 32 bit bounce ray color (which is first divided by 256 (8 bits)). So _theoretically_ i think the multiplied value
+    // cannot exceed 32 bits. But we're using 64 bits here anyway, just in case.
+    uint64_t red   = (uint64_t)round((double)sphereColor->red * ((double)bouncedRayIncomingColor.red / 256)),
+             green = (uint64_t)round((double)sphereColor->green * ((double)bouncedRayIncomingColor.green / 256)),
+             blue  = (uint64_t)round((double)sphereColor->blue * ((double)bouncedRayIncomingColor.blue / 256));
+
     return (Color32){
-        // Note the "& 0xFF" - we must cap the colors of the matte surface within the expected 8 bits
-        // (even though we are operating on Color32, where each component is 32 bits).
-        .red    = min((uint32_t)255, (uint32_t)round((double)sphereColor->red * ((double)bouncedRayIncomingColor.red / 256))),
-        .green  = min((uint32_t)255, (uint32_t)round((double)sphereColor->green * ((double)bouncedRayIncomingColor.green / 256))),
-        .blue   = min((uint32_t)255, (uint32_t)round((double)sphereColor->blue * ((double)bouncedRayIncomingColor.blue / 256))),
+        // // Note that we must cap the colors of the matte surface within the expected 8 bits
+        // // (even though we are operating on Color32, where each component is 32 bits).
+        // .red    = min((uint32_t)255, (uint32_t)round((double)sphereColor->red * ((double)bouncedRayIncomingColor.red / 256))),
+        // .green  = min((uint32_t)255, (uint32_t)round((double)sphereColor->green * ((double)bouncedRayIncomingColor.green / 256))),
+        // .blue   = min((uint32_t)255, (uint32_t)round((double)sphereColor->blue * ((double)bouncedRayIncomingColor.blue / 256))),
+
+        // Must cap the resulting colors at 32 bits.
+        .red    = min(0xFFFFFFFE, red),
+        .green  = min(0xFFFFFFFE, green),
+        .blue   = min(0xFFFFFFFE, blue),
     };
 }
 

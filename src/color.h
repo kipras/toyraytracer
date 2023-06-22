@@ -8,7 +8,6 @@
 
 typedef struct Color_s          Color;
 typedef struct Color32_s        Color32;
-typedef struct ColorSum_s       ColorSum;
 
 
 struct Color_s {
@@ -40,15 +39,7 @@ struct Color32_s {
 
 // The Color32 of a light.
 // IMPORTANT: this must only be assigned to the .matData->color of light spheres (i.e. that use matLight material).
-#define COLOR32_LIGHT       {1000, 1000, 1000}
-
-// A structure used to blend multiple colors or images (for producing an average).
-// We use it to produce the resulting image by averaging multiple raytraced images.
-struct ColorSum_s {
-    uint32_t    red;
-    uint32_t    green;
-    uint32_t    blue;
-};
+#define COLOR32_LIGHT       {10000, 10000, 10000}
 
 
 /**

@@ -7,14 +7,14 @@
 /**
  * Anti-aliases (larger) `srcImg` into `dstImg`, by averaging ANTIALIAS_FACTOR^2 pixels into 1 pixel (using grid algorithm).
  */
-static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth);
+static void image_antialias(Color32 *srcImg, Color32 *dstImg, uint32_t dstHeight, uint32_t dstWidth);
 
 
-void render_frame_img_antialiased(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth)
+void render_frame_img_antialiased(App *app, Color32 *img, uint32_t imgHeight, uint32_t imgWidth)
 {
     uint32_t upsampledImgHeight = imgHeight * ANTIALIAS_FACTOR;
     uint32_t upsampledImgWidth = imgWidth * ANTIALIAS_FACTOR;
-    Color upsampledImage[upsampledImgHeight * upsampledImgWidth];
+    Color32 upsampledImage[upsampledImgHeight * upsampledImgWidth];
 
     // Produce the (larger) upsampled image.
     render_frame_img(app, upsampledImage, upsampledImgHeight, upsampledImgWidth);
@@ -23,7 +23,7 @@ void render_frame_img_antialiased(App *app, Color *img, uint32_t imgHeight, uint
     image_antialias(upsampledImage, img, imgHeight, imgWidth);
 }
 
-void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth)
+void render_frame_img(App *app, Color32 *img, uint32_t imgHeight, uint32_t imgWidth)
 {
     Ray ray = app->camera;
     Ray unitRay;
@@ -58,10 +58,7 @@ void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidt
                 // color = render_background_pixel(app, &ray);
             }
 
-            Color color;
-            color32_to_color(&color32, &color);
-
-            img[imgYArrOffset + imgX] = color;
+            img[imgYArrOffset + imgX] = color32;
         }
     }
 }
@@ -96,7 +93,7 @@ void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidt
 //     // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
 // }
 
-static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth)
+static void image_antialias(Color32 *srcImg, Color32 *dstImg, uint32_t dstHeight, uint32_t dstWidth)
 {
     uint32_t srcWidth  = dstWidth*ANTIALIAS_FACTOR;
     uint16_t samplesPerPixel = ANTIALIAS_FACTOR*ANTIALIAS_FACTOR;
@@ -107,23 +104,26 @@ static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, ui
         srcXBase = 0;
         for (uint32_t dstX = 0; dstX < dstWidth; dstX++) {
             // Calculate the antialiased pixel in dstImg from multiple pixels in srcImg.
-            uint16_t red = 0, green = 0, blue = 0;
+            uint64_t red = 0, green = 0, blue = 0;
             for (uint32_t srcY = srcYBase; srcY < srcYBase+ANTIALIAS_FACTOR; srcY++) {
                 uint32_t srcYArrOffset = srcY*srcWidth;
                 for (uint32_t srcX = srcXBase; srcX < srcXBase+ANTIALIAS_FACTOR; srcX++) {
-                    Color *srcColor = &srcImg[srcYArrOffset + srcX];
-                    red     += srcColor->red;
-                    green   += srcColor->green;
-                    blue    += srcColor->blue;
+                    // Cap at 32 bits*ANTIALIAS_FACTOR (we will divide by ANTIALIAS_FACTOR later)
+                    uint64_t cap = 0xFFFFFFFE * ANTIALIAS_FACTOR;
+
+                    Color32 *srcColor = &srcImg[srcYArrOffset + srcX];
+                    red     = min(cap, red + srcColor->red);
+                    green   = min(cap, green + srcColor->green);
+                    blue    = min(cap, blue + srcColor->blue);
                 }
             }
 
             // Calculate the resulting pixel color (averaged from the source pixel colors).
             if (ANTIALIAS_FACTOR == 2) {
                 // If antialiasing factor is a power of 2 - then we can use the faster shift-right instead of division.
-                dstImg[dstY*dstWidth + dstX] = (Color){.red = red >> 2, .green = green >> 2, .blue = blue >> 2};
+                dstImg[dstY*dstWidth + dstX] = (Color32){.red = red >> 2, .green = green >> 2, .blue = blue >> 2};
             } else {
-                dstImg[dstY*dstWidth + dstX] = (Color){.red = red/samplesPerPixel, .green = green/samplesPerPixel, .blue = blue/samplesPerPixel};
+                dstImg[dstY*dstWidth + dstX] = (Color32){.red = red/samplesPerPixel, .green = green/samplesPerPixel, .blue = blue/samplesPerPixel};
             }
 
             srcXBase += ANTIALIAS_FACTOR;
@@ -132,21 +132,29 @@ static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, ui
     }
 }
 
-void blend_frame(ColorSum *summedFrames, uint32_t frameNum, Color *frameImg, Color *resImg, uint32_t imgHeight, uint32_t imgWidth)
+void blend_frame(Color32 *summedFrames, uint32_t frameNum, Color32 *frameImg, Color *resImg, uint32_t imgHeight, uint32_t imgWidth)
 {
     for (uint32_t y = 0; y < imgHeight; y++) {
         uint32_t yArrOffset = y * imgWidth;
         for (uint32_t x = 0; x < imgWidth; x++) {
-            ColorSum *summedPixel = &summedFrames[yArrOffset + x];
-            Color *frameImgPixel = &frameImg[yArrOffset + x];
-            summedPixel->red += frameImgPixel->red;
-            summedPixel->green += frameImgPixel->green;
-            summedPixel->blue += frameImgPixel->blue;
+            Color32 *summedPixel = &summedFrames[yArrOffset + x];
+            Color32 *frameImgPixel = &frameImg[yArrOffset + x];
 
+            // Using 64 bit int to store the sum, to avoid overflow (if the sum overflows).
+            uint64_t sumRed   = summedPixel->red + frameImgPixel->red,
+                     sumGreen = summedPixel->green + frameImgPixel->green,
+                     sumBlue  = summedPixel->blue + frameImgPixel->blue;
+
+            // Store sums, capped at 32 bits.
+            summedPixel->red   = min(0xFFFFFFFE, sumRed);
+            summedPixel->green = min(0xFFFFFFFE, sumGreen);
+            summedPixel->blue  = min(0xFFFFFFFE, sumBlue);
+
+            // Store resulting image, after capping each color at 8 bits (they **must** be capped).
             Color *resImgPixel = &resImg[yArrOffset + x];
-            resImgPixel->red = round((double)summedPixel->red / frameNum);
-            resImgPixel->green = round((double)summedPixel->green / frameNum);
-            resImgPixel->blue = round((double)summedPixel->blue / frameNum);
+            resImgPixel->red   = min(0xFE, round((double)summedPixel->red / frameNum));
+            resImgPixel->green = min(0xFE, round((double)summedPixel->green / frameNum));
+            resImgPixel->blue  = min(0xFE, round((double)summedPixel->blue / frameNum));
         }
     }
 }

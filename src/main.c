@@ -155,9 +155,9 @@ static void run_render_loop(App *app)
     struct timespec tstart;
     clock_gettime(CLOCK_MONOTONIC, &tstart);
 
-    ColorSum allFrames[app->windowHeight * app->windowWidth]; (void)allFrames;
-    Color frameImg[app->windowHeight * app->windowWidth];
-    Color blendedImg[app->windowHeight * app->windowWidth]; (void)blendedImg;
+    Color32 allFrames[app->windowHeight * app->windowWidth];        // NOTE: should this perhaps be Color64 (to avoid overflow/cap) ?
+    Color32 frameImg[app->windowHeight * app->windowWidth];
+    Color blendedImg[app->windowHeight * app->windowWidth];
     for (uint32_t frames = 1; ; frames++) {
         if (ANTIALIAS_FACTOR > 1) {
             render_frame_img_antialiased(app, frameImg, app->windowHeight, app->windowWidth);
