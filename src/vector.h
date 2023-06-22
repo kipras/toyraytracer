@@ -1,10 +1,8 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
-// Need _USE_MATH_DEFINES to have <math.h> export the M_PI constant.
-#define _USE_MATH_DEFINES
-#include <math.h>
 
+#include <math.h>
 #include <stdbool.h>
 
 
@@ -197,15 +195,18 @@ static inline void vector3_divide_length(Vector3 *v, double divisor)
 
 static inline void random_point_in_unit_sphere(Vector3 *point)
 {
-    // Checked the performance of these algos - it is basically the same. The trigonometric one is just slightly faster
-    // (on a 3rd generation Intel Core i7 (Ivy Bridge)), so using that one.
-    // It also has the benefit of always producing unit-length vectors.
+    // Checked the performance of these algos (on a 3rd generation Intel Core i7 (Ivy Bridge)).
+    //
+    // The random algo is ~28% faster, so using this one.
+    //
+    // If we apply vector3_to_unit() to the result of each random algo call (to produce a unit vector) - then random algo is still
+    // ~25% faster.
 
-    // // Note that random algo generates a _unit or smaller_ vector.
-    // random_point_in_unit_sphere__random_algo(point);
+    // Note that random algo generates a _unit or smaller_ vector.
+    random_point_in_unit_sphere__random_algo(point);
 
-    // Note that trigonometric algo always generates a unit vector.
-    random_point_in_unit_sphere__trigonometric_algo(point);
+    // // Note that trigonometric algo always generates a unit vector.
+    // random_point_in_unit_sphere__trigonometric_algo(point);
 }
 
 static inline void random_point_in_unit_sphere__random_algo(Vector3 *point)
@@ -236,13 +237,9 @@ static inline void random_point_in_unit_sphere__random_algo(Vector3 *point)
 static inline void random_point_in_unit_sphere__trigonometric_algo(Vector3 *point)
 {
     // This generates a point that is always a unit vector (is of length 1).
-
-    double horAngle = random_double_exc(0, 2*M_PI);  // Horizontal angle (within a circle), in radians.
-    double vertAngle = random_double_exc(0, M_PI);   // Vertical angle (within a half-circle), in radians.
-
-    point->x = cos(horAngle);
-    point->y = sin(horAngle);
-    point->z = cos(vertAngle);
+    point->x = cos(random_double_exc(0, M_PI));
+    point->y = sin(random_double_exc(0, M_PI));
+    point->z = cos(random_double_exc(0, M_PI));
 }
 
 #endif // __VECTOR_H__

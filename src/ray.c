@@ -4,8 +4,14 @@
 #include "vector.h"
 
 
-bool ray_trace(Scene *scene, Ray *ray, Color *color)
+bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color32 *color)
 {
+    if (rtContext->bounces >= RAY_BOUNCES_MAX) {
+        return false;
+    }
+
+    rtContext->bounces++;
+
     // Find the closest sphere that `ray` hits (if any) and store it in `minSphere` and the distance to it in `minDist`.
     bool hitSomething = false;
     double minDist = DBL_MAX;
@@ -14,7 +20,7 @@ bool ray_trace(Scene *scene, Ray *ray, Color *color)
     for (uint32_t i = 0; i < scene->spheresLength; i++) {
         Sphere *sphere = &sphereList[i];
         double dist = ray_distance_to_sphere(ray, sphere);
-        if (dist >= 0) {
+        if (dist >= RAY_DISTANCE_MIN) {
             hitSomething = true;
             if (dist < minDist) {
                 minDist = dist;
@@ -24,6 +30,9 @@ bool ray_trace(Scene *scene, Ray *ray, Color *color)
     }
 
     if (! hitSomething) {
+        // When we could not hit anything - return the environment's ambient color (darkness).
+        // If we would want ambient lighting (i.e. lighting coming from everywhere) - then change this to that light's color.
+        *color = (Color32)COLOR_BLACK;
         return false;
     }
 
@@ -31,7 +40,7 @@ bool ray_trace(Scene *scene, Ray *ray, Color *color)
     Vector3 hitPoint;
     ray_point(ray, minDist, &hitPoint);
 
-    *color = minSphere->material->hit(scene, ray, minSphere, &hitPoint);
+    *color = minSphere->material->hit(scene, ray, rtContext, minSphere, &hitPoint);
 
     return true;
 }

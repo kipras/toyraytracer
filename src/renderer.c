@@ -1,5 +1,3 @@
-#include "main.h"
-
 #include "color.h"
 #include "renderer.h"
 
@@ -28,6 +26,7 @@ void render_frame_img_antialiased(App *app, Color *img, uint32_t imgHeight, uint
 void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth)
 {
     Ray ray = app->camera;
+    Ray unitRay;
 
     uint32_t imgMidHeight = imgHeight >> 1;
     uint32_t imgMidWidth = imgWidth >> 1;
@@ -43,13 +42,25 @@ void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidt
             ray.direction.x = ((double)imgX / imgMidWidth) - 1;
             // printf("ray.direction.x = %f\n", ray.direction.x);
 
-            Color color;
-            if (! ray_trace(&app->scene, &ray, &color)) {
-                color = (Color)COLOR_BLACK;
+            RTContext rtContext;
+            ray_trace_context_init(&rtContext);
+
+            // We will pass a ray, where `direction` is a unit vector, because this is needed for dot product later on, by some materials.
+            // That way those materials don't need to compute the unit vector themselves.
+            unitRay = ray;
+            vector3_to_unit(&unitRay.direction);
+
+            Color32 color32;
+            if (! ray_trace(&rtContext, &app->scene, &unitRay, &color32)) {
+                color32 = (Color32)COLOR_BLACK;
 
                 // // Ray didn't hit anything - rendering background instead.
                 // color = render_background_pixel(app, &ray);
             }
+
+            Color color;
+            color32_to_color(&color32, &color);
+
             img[imgYArrOffset + imgX] = color;
         }
     }
@@ -118,6 +129,25 @@ static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, ui
             srcXBase += ANTIALIAS_FACTOR;
         }
         srcYBase += ANTIALIAS_FACTOR;
+    }
+}
+
+void blend_frame(ColorSum *summedFrames, uint32_t frameNum, Color *frameImg, Color *resImg, uint32_t imgHeight, uint32_t imgWidth)
+{
+    for (uint32_t y = 0; y < imgHeight; y++) {
+        uint32_t yArrOffset = y * imgWidth;
+        for (uint32_t x = 0; x < imgWidth; x++) {
+            ColorSum *summedPixel = &summedFrames[yArrOffset + x];
+            Color *frameImgPixel = &frameImg[yArrOffset + x];
+            summedPixel->red += frameImgPixel->red;
+            summedPixel->green += frameImgPixel->green;
+            summedPixel->blue += frameImgPixel->blue;
+
+            Color *resImgPixel = &resImg[yArrOffset + x];
+            resImgPixel->red = round((double)summedPixel->red / frameNum);
+            resImgPixel->green = round((double)summedPixel->green / frameNum);
+            resImgPixel->blue = round((double)summedPixel->blue / frameNum);
+        }
     }
 }
 

@@ -18,6 +18,7 @@ header_deps := $(sources:.c=.d)
 cc := $(CC)
 
 cc_opts :=
+cc_opts := ${cc_opts} -D_USE_MATH_DEFINES=1		# Need to define _USE_MATH_DEFINES to get M_PI from <math.h>
 cc_opts := ${cc_opts} -g
 cc_opts := ${cc_opts} -std=c11
 cc_opts := ${cc_opts} -Wall

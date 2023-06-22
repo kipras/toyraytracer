@@ -22,6 +22,7 @@ struct Sphere_s {
     uint32_t        radius;
 //    double          radiusDiv2;
     Material       *material;
+    void           *matData;
     Color           color;
 };
 

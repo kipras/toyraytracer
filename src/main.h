@@ -32,12 +32,6 @@
 #define FOV                 90
 
 
-// // Wrappers around malloc()/free(). We call these (instead of calling free() directly) just in case we will decide to replace the standard
-// // malloc()/free() with some other memory allocator later on - the we would only need to replace them here.
-// #define ralloc(sz)          malloc(sz)
-// #define rfree(p)            free(p)
-
-
 typedef struct App_s            App;
 
 
@@ -68,13 +62,6 @@ struct App_s {
 
 
 void log_err(char *err);
-void init_app(App *app);
-void init_screen(App *app);
-void init_world(App *app);
-void add_sphere(App *app, Sphere sphere);
-void run_render_loop(App *app);
-void output_stats(App *app, struct timespec *tstart, uint64_t frames);
-bool keyboard_key_pressed();
 // float fast_inv_sqrt(float number);
 
 #endif // __MAIN_H__
