@@ -1,10 +1,11 @@
+#include <stdio.h>
 #include <float.h>
 
 #include "ray.h"
 #include "vector.h"
 
 
-bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color32 *color)
+bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color *color)
 {
     if (rtContext->bounces >= RAY_BOUNCES_MAX) {
         return false;
@@ -32,7 +33,7 @@ bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color32 *color)
     if (! hitSomething) {
         // When we could not hit anything - return the environment's ambient color (darkness).
         // If we would want ambient lighting (i.e. lighting coming from everywhere) - then change this to that light's color.
-        *color = (Color32)COLOR_BLACK;
+        *color = (Color)COLOR_BLACK;
         return false;
     }
 

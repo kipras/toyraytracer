@@ -29,13 +29,13 @@ cc_opts := ${cc_opts} -Wextra
 cc_opts := ${cc_opts} -O3
 
 ifeq ($(ENV_LINUX), 1)
-linker_opts := -Wl,--stack,16777216 -L SDL2-2.24.0/build/build/.libs -lSDL2main -lSDL2 -Wl,-rpath,${DIR}/SDL2-2.24.0/build/build/.libs -lm
+linker_opts := -Wl,--stack,67108864 -L SDL2-2.24.0/build/build/.libs -lSDL2main -lSDL2 -Wl,-rpath,${DIR}/SDL2-2.24.0/build/build/.libs -lm
 main_bin := $(src_dir)/main
 else
 # I think the default stack size (in windows msys2 msys64/mingw64) is 1MB. This is only enough to render 200x200 images, but not 400x400
 # (because we store everything on the stack, including the image buffers).
 # Increasing to 16MB allows rendering images of at least up to 1024x1024.
-linker_opts := -Wl,--stack,16777216 -L SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
+linker_opts := -Wl,--stack,67108864 -L SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
 main_bin := $(src_dir)/main.exe
 endif
 

@@ -19,7 +19,7 @@ static void init_app(App *app);
 static void init_screen(App *app);
 static void init_world(App *app);
 static void init_spheres(App *app);
-static void add_light(App *app, Sphere sphere, Color32 color);
+static void add_light(App *app, Sphere sphere, Color color);
 static void add_sphere(App *app, Sphere sphere);
 static void run_render_loop(App *app);
 static void output_stats(App *app, struct timespec *tstart, uint64_t frames);
@@ -118,21 +118,21 @@ static void init_spheres(App *app)
     add_sphere(app, (Sphere){.center = {.x = 0, .y = -8, .z = -12.5}, .radius = 3, .material = &matMatte, .color = COLOR_RED});     // Bottom center sphere (small).
     add_sphere(app, (Sphere){.center = {.x = 8, .y = -8, .z = -12.5}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});   // Bottom right sphere (small).
 
-    add_light(app, (Sphere){.center = {.x = -9, .y = 10, .z = -20}, .radius = 3, .material = &matLight}, (Color32)COLOR32_LIGHT);    // A light.
+    add_light(app, (Sphere){.center = {.x = -9, .y = 10, .z = -20}, .radius = 3, .material = &matLight}, (Color)COLOR_LIGHT);    // A light.
 
     // add_sphere(app, (Sphere){.center = {.x = 0, .y = -2000, .z = -400}, .radius = 2000, .material = &matGround, .color = COLOR_GROUND});  // Ground sphere.
     add_sphere(app, (Sphere){.center = {.x = 0, .y = -2000, .z = -220}, .radius = 2000, .material = &matMatte, .color = COLOR_GROUND});  // Ground sphere.
 
     // add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matGradientSky, .color = COLOR_BLACK});  // Sky sphere (COLOR_BLACK is the Color equivalent of NULL).
 
-    // add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color32)COLOR_SKY);      // Sky sphere, providing an ambient light.
+    // add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color)COLOR_SKY);      // Sky sphere, providing an ambient light.
 
-    add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color32)COLOR_AMBIENT_LIGHT);      // Sky sphere, providing an ambient light.
+    add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color)COLOR_AMBIENT_LIGHT);      // Sky sphere, providing an ambient light.
 }
 
-static void add_light(App *app, Sphere sphere, Color32 color)
+static void add_light(App *app, Sphere sphere, Color color)
 {
-    MaterialLightData *matData = ralloc(sizeof(Color32));
+    MaterialLightData *matData = ralloc(sizeof(Color));
     matData->color = color;
     sphere.matData = matData;
 
@@ -155,14 +155,14 @@ static void run_render_loop(App *app)
     struct timespec tstart;
     clock_gettime(CLOCK_MONOTONIC, &tstart);
 
-    Color32 allFrames[app->windowHeight * app->windowWidth];        // NOTE: should this perhaps be Color64 (to avoid overflow/cap) ?
+    Color allFrames[app->windowHeight * app->windowWidth];        // NOTE: should this perhaps be Color64 (to avoid overflow/cap) ?
 
     // Have to clear the allFrames buffer first. The other buffers we don't need to clear, because we will be directly writing images to
     // them. But the allFrames buffer will be _appended to_ instead of _set_, so we must make sure that each color of each pixel starts
     // from 0
-    memset(&allFrames, 0, sizeof(Color32) * app->windowHeight * app->windowWidth);
+    memset(&allFrames, 0, sizeof(Color) * app->windowHeight * app->windowWidth);
 
-    Color32 frameImg[app->windowHeight * app->windowWidth];
+    Color frameImg[app->windowHeight * app->windowWidth];
     Color blendedImg[app->windowHeight * app->windowWidth];
     for (uint32_t frames = 1; ; frames++) {
         if (ANTIALIAS_FACTOR > 1) {
@@ -171,6 +171,7 @@ static void run_render_loop(App *app)
             render_frame_img(app, frameImg, app->windowHeight, app->windowWidth);
         }
 
+        // (void)blendedImg;
         // draw_img_to_screen(app, frameImg, app->windowHeight, app->windowWidth);
 
         blend_frame(allFrames, frames, frameImg, blendedImg, app->windowHeight, app->windowWidth);
@@ -178,6 +179,8 @@ static void run_render_loop(App *app)
 
         // Calculate & output performance stats
         output_stats(app, &tstart, frames);
+
+        // void (*f) = output_stats; (void)f;
 
         // Run rendering until the user presses any key.
         if (keyboard_key_pressed()) {

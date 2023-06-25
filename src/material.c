@@ -8,11 +8,11 @@
 #include "vector.h"
 
 
-static Color32 matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
-static Color32 shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
-static Color32 sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
-static Color32 ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
-static Color32 light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static Color matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static Color shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static Color sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static Color ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 
 
 Material matMatte = {
@@ -40,7 +40,7 @@ Material matLight = {
 
 
 // static uint32_t hits = 0;
-static Color32 matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+static Color matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
     // (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
     (void)(ray);
@@ -79,14 +79,14 @@ static Color32 matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *s
     // printf("bouncedRay direction .x = %f, .y = %f, .z = %f\n", bouncedRay.direction.x, bouncedRay.direction.y, bouncedRay.direction.z);
     // printf("\n");
 
-    Color32 bouncedRayIncomingColor;
+    Color bouncedRayIncomingColor;
     bool traceSuccess = ray_trace(rtContext, scene, &bouncedRay, &bouncedRayIncomingColor);
 
     // printf("traceSuccess = %d\n", traceSuccess);
 
     if (! traceSuccess) {
         // Could not find any incoming color (light), so just shade this pixel of the sphere with black.
-        return (Color32)COLOR_BLACK;
+        return (Color)COLOR_BLACK;
     }
 
     // // For calculating the dot product between incoming `ray` and the `bouncedRay` - we need to reverse `bouncedRay` direction.
@@ -109,29 +109,14 @@ static Color32 matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *s
 
     Color *sphereColor = &sphere->color;
 
-    // We're using 64 bits to store the resulting colors after multiplication, to avoid overflow.
-    // Though not sure if that is really needed, because we're multiplying sphere colors that should be 8 bit (even if they're stored as
-    // 32 bit) with a 32 bit bounce ray color (which is first divided by 256 (8 bits)). So _theoretically_ i think the multiplied value
-    // cannot exceed 32 bits. But we're using 64 bits here anyway, just in case.
-    uint64_t red   = (uint64_t)round((double)sphereColor->red * ((double)bouncedRayIncomingColor.red / 256)),
-             green = (uint64_t)round((double)sphereColor->green * ((double)bouncedRayIncomingColor.green / 256)),
-             blue  = (uint64_t)round((double)sphereColor->blue * ((double)bouncedRayIncomingColor.blue / 256));
-
-    return (Color32){
-        // // Note that we must cap the colors of the matte surface within the expected 8 bits
-        // // (even though we are operating on Color32, where each component is 32 bits).
-        // .red    = min((uint32_t)255, (uint32_t)round((double)sphereColor->red * ((double)bouncedRayIncomingColor.red / 256))),
-        // .green  = min((uint32_t)255, (uint32_t)round((double)sphereColor->green * ((double)bouncedRayIncomingColor.green / 256))),
-        // .blue   = min((uint32_t)255, (uint32_t)round((double)sphereColor->blue * ((double)bouncedRayIncomingColor.blue / 256))),
-
-        // Must cap the resulting colors at 32 bits.
-        .red    = min(0xFFFFFFFE, red),
-        .green  = min(0xFFFFFFFE, green),
-        .blue   = min(0xFFFFFFFE, blue),
+    return (Color){
+        .red    = sphereColor->red   * bouncedRayIncomingColor.red,
+        .green  = sphereColor->green * bouncedRayIncomingColor.green,
+        .blue   = sphereColor->blue  * bouncedRayIncomingColor.blue,
     };
 }
 
-static Color32 shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+static Color shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
     (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
     (void)(ray);
@@ -152,7 +137,7 @@ static Color32 shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *
     Vector3 normal;
     calc_sphere_surface_normal(sphere, pos, &normal);
 
-    return (Color32){
+    return (Color){
         .red = floor((normal.x + 1) * 128),
         .green = floor((normal.y + 1) * 128),
         .blue = floor((normal.z + 1) * 128),
@@ -161,9 +146,8 @@ static Color32 shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *
 
 static Color skyTopColor = (Color)COLOR_GRADIENT_SKY_TOP;
 static Color skyBottomColor = (Color)COLOR_GRADIENT_SKY_BOTTOM;
-static Color32 skyBottomColor32 = (Color32)COLOR_GRADIENT_SKY_BOTTOM;
 
-static Color32 sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+static Color sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
     (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
     (void)(rtContext);
@@ -174,13 +158,13 @@ static Color32 sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
 
     double y = ray->direction.y;
     if (y < 0) {
-        return skyBottomColor32;
+        return skyBottomColor;
     } else {
         return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
     }
 }
 
-static Color32 ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+static Color ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
     (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
     (void)(ray);
@@ -190,10 +174,10 @@ static Color32 ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *
 
     // printf("\nground_hit()\n");
 
-    return (Color32)COLOR_GROUND;
+    return (Color)COLOR_GROUND;
 }
 
-static Color32 light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
     (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
     (void)(ray);
@@ -205,7 +189,7 @@ static Color32 light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *s
     MaterialLightData *matData = sphere->matData;
 
     // printf("matData = %p\n", matData);
-    // printf("matData->color .red = %d, .green = %d, .blue = %d", matData->color.red, matData->color.green, matData->color.blue);
+    // printf("matData->color .red = %f, .green = %f, .blue = %f", matData->color.red, matData->color.green, matData->color.blue);
     // exit(1);
 
     return matData->color;

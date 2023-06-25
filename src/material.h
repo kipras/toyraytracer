@@ -27,7 +27,7 @@ struct Material_s {
     /**
      * NOTE: this function can modify `ray` and `pos`.
      */
-    Color32 (*hit)(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+    Color (*hit)(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 };
 
 struct MaterialLightData_s {
@@ -35,7 +35,7 @@ struct MaterialLightData_s {
     // Where <light_color> is the standard 24bit Color type.
     // I'm not sure how to define the units for <luminosity> though. You can imagine that when <luminosity> = 1, then then this is the same
     // as a matte object. Experiment to get the right value.
-    Color32 color;
+    Color color;
 };
 
 

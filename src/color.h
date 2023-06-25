@@ -7,68 +7,47 @@
 
 
 typedef struct Color_s          Color;
-typedef struct Color32_s        Color32;
 
 
 struct Color_s {
-    uint8_t     red;
-    uint8_t     green;
-    uint8_t     blue;
+    double  red;
+    double  green;
+    double  blue;
 };
 
-struct Color32_s {
-    uint32_t    red;
-    uint32_t    green;
-    uint32_t    blue;
-};
+#define COLOR_BLACK { 0, 0, 0}
+#define COLOR_WHITE { 1, 1, 1}
+#define COLOR_RED   { 1, 0, 0}
+#define COLOR_GREEN { 0, 1, 0}
+#define COLOR_BLUE  { 0, 0, 1}
 
-#define COLOR_BLACK {  0,   0,   0}
-#define COLOR_WHITE {255, 255, 255}
-#define COLOR_RED   {255,   0,   0}
-#define COLOR_GREEN {  0, 255,   0}
-#define COLOR_BLUE  {  0,   0, 255}
+#define COLOR_GROUND    {0.586, 0.750, 0.340}     // We tried to go for the color of grass(-ish) here.
+#define COLOR_SKY       {0.633, 0.797, 0.890}
 
-#define COLOR_GROUND    {150, 193,  88}     // We tried to go for the color of grass(-ish) here.
-#define COLOR_SKY       {162, 204, 228}
-
-#define COLOR_GRADIENT_SKY_TOP      {128, 179, 255}
-#define COLOR_GRADIENT_SKY_BOTTOM   {255, 255, 255}
+#define COLOR_GRADIENT_SKY_TOP      {0.5, 0.7,   1}
+#define COLOR_GRADIENT_SKY_BOTTOM   {  1,   1,   1}
 
 // The ambient light that the sky produces.
-#define COLOR_AMBIENT_LIGHT {127, 127, 127}
+#define COLOR_AMBIENT_LIGHT {0.5, 0.5, 0.5}
 
-// The Color32 of a light.
-// IMPORTANT: this must only be assigned to the .matData->color of light spheres (i.e. that use matLight material).
-#define COLOR32_LIGHT       {10000, 10000, 10000}
-
-
-/**
- * Converts the source Color32 to a standard 24bit Color.
- * The input Color32 is expected to have all of its values (red/green/blue) to be within the [0, 255] range.
- * Otherwise, the values that exceed 255 will be capped at 255.
- */
-static inline void color32_to_color(Color32 *srcColor32, Color *destColor);
-static inline Color32 gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val);
+// The color of a white light (x * <white>).
+#define COLOR_LIGHT       {40, 40, 40}
 
 
-static inline void color32_to_color(Color32 *srcColor32, Color *destColor)
+static inline Color gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val);
+
+
+static inline Color gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val)
 {
-    destColor->red = min((uint32_t)255, srcColor32->red);
-    destColor->green = min((uint32_t)255, srcColor32->green);
-    destColor->blue = min((uint32_t)255, srcColor32->blue);
-}
-
-static inline Color32 gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val)
-{
-    int16_t redColorRange = colorTo->red - colorFrom->red;
-    int16_t greenColorRange = colorTo->green - colorFrom->green;
-    int16_t blueColorRange = colorTo->blue - colorFrom->blue;
+    double redColorRange = colorTo->red - colorFrom->red;
+    double greenColorRange = colorTo->green - colorFrom->green;
+    double blueColorRange = colorTo->blue - colorFrom->blue;
 
     double valRange = valTo - valFrom;
     double valWithinRange = val - valFrom;
     double rangePortion = valWithinRange / valRange;
 
-    return (Color32){
+    return (Color){
         .red = colorFrom->red + (redColorRange * rangePortion),
         .green = colorFrom->green + (greenColorRange * rangePortion),
         .blue = colorFrom->blue + (blueColorRange * rangePortion),

@@ -53,7 +53,7 @@ static inline void calc_sphere_surface_normal(Sphere *sphere, Vector3 *point, Ve
  * If the `ray` hits something (and is traced successfully) - then returns true and stores the resulting color in `color`.
  * Otherwise - returns false.
  */
-bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color32 *color);
+bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color *color);
 
 /**
  * If `ray` hits `sphere` - the distance (>= 0) from the origin of the `ray` to the point on `sphere` where it hits.
