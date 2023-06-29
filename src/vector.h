@@ -104,9 +104,6 @@ static inline void random_point_in_unit_sphere__random_algo(Vector3 *point);
 static inline void random_point_in_unit_sphere__trigonometric_algo(Vector3 *point);
 
 
-extern void log_err(char *err);
-
-
 // static inline Vector3 * vector3_alloc()
 // {
 //     Vector3 *vec;

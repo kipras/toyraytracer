@@ -20,6 +20,8 @@
 
 #define assert2(exp, msg) if (! (exp)) { printf("%s", msg); exit(1); }
 
+#define log_err(...) fprintf(stderr, __VA_ARGS__);
+
 #define WINDOW_WIDTH        400
 #define WINDOW_HEIGHT       400
 
@@ -34,20 +36,35 @@ typedef struct App_s            App;
 
 
 typedef enum {
+    CC_z_0,
+    CC_z_15_downwards,
+} CameraConfig;
+
+#define CAMERA_CONFIG   CC_z_15_downwards
+
+
+typedef enum {
     SC_none,                                // No predefined scene.
     SC_6_spheres_fov_90,
     SC_6_spheres_fov_40,
+    SC_6_spheres__fov_40__cam_z_0,
+    SC_6_spheres__fov_40__cam_z_15_downwards,
     SC_camera_testing_1_sphere_fov_90,
     SC_camera_testing_4_spheres_fov_90,
     SC_camera_testing_4_spheres_fov_40,
 } SceneConfig;
 
+#define SCENE_CONFIG    SC_6_spheres__fov_40__cam_z_15_downwards
+
+
 typedef enum {
     SK_none,                                // No predefined sky.
-    SK_ambient_07,
+    SK_ambient_gray_07,
     SK_gradient_blue,
     SK_ambient_blue,
 } SkyConfig;
+
+#define SKY_CONFIG      SK_ambient_gray_07
 
 
 #include "camera.h"
@@ -64,26 +81,16 @@ struct App_s {
 
     Scene           scene;
     Camera          camera;
-
-    // // Precalculated camera angles for screen pixels
-    // Angle           renderWindowPixelsHorAngles[WINDOW_WIDTH];
-    // Angle           renderWindowPixelsVertAngles[WINDOW_HEIGHT];
-
-    // // Direction       renderWindowPixelsCameraDirectionCache[WINDOW_HEIGHT * WINDOW_WIDTH];
-
-    // // FOV can theoretically go up to the full 360 degrees. However, practically it usually goes up to no more than
-    // // 120 degrees in graphics applications, so we use an 8 bit integer (up to 255) to store it.
-    // uint8_t         fov;
 };
 
 
-void log_err(char *err);
-void scene_6_spheres_fov_90(App *app);
-void scene_6_spheres_fov_40(App *app);
-void scene_camera_testing_1_sphere_fov_90(App *app);
-void scene_camera_testing_4_spheres_fov_90(App *app);
-void scene_camera_testing_4_spheres_fov_40(App *app);
-void sky_ambient_07(App *app);
+void scene_6_spheres__fov_90(App *app);
+void scene_6_spheres__fov_40__cam_z_0(App *app);
+void scene_6_spheres__fov_40__cam_z_15_downwards(App *app);
+void scene_camera_testing_1_sphere__fov_90(App *app);
+void scene_camera_testing_4_spheres__fov_90(App *app);
+void scene_camera_testing_4_spheres__fov_40(App *app);
+void sky_ambient_gray_07(App *app);
 void sky_gradient_blue(App *app);
 void sky_ambient_blue(App *app);
 

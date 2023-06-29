@@ -9,7 +9,7 @@
 // otherwise (theoretically) if you set FOV to the full 360 degrees for the smaller dimension - then you can't extrapolate the FOV of the
 // larger dimension from that, because it doesn't make sense for it to be > 360 degrees.
 // But i do mean _theoretically_, because a 360 degree FOV doesn't make sense either :)
-#define FOV_HORIZONTAL      90
+#define FOV_HORIZONTAL      40
 
 extern double fovHorizDeg;
 extern double fovVertDeg;
