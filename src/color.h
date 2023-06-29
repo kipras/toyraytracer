@@ -28,10 +28,10 @@ struct Color_s {
 #define COLOR_GRADIENT_SKY_BOTTOM   {  1,   1,   1}
 
 // The ambient light that the sky produces.
-#define COLOR_AMBIENT_LIGHT {0.5, 0.5, 0.5}
+#define COLOR_AMBIENT_LIGHT {0.7, 0.7, 0.7}
 
 // The color of a white light (x * <white>).
-#define COLOR_LIGHT       {40, 40, 40}
+#define COLOR_LIGHT       {10, 10, 10}
 
 
 static inline Color gradient(Color *colorFrom, Color *colorTo, double valFrom, double valTo, double val);

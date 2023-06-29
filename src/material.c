@@ -156,11 +156,11 @@ static Color sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *spher
 
     // printf("\nsky_hit()\n");
 
-    double y = ray->direction.y;
-    if (y < 0) {
+    double z = ray->direction.z;
+    if (z < 0) {
         return skyBottomColor;
     } else {
-        return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
+        return gradient(&skyBottomColor, &skyTopColor, 0, 1, z);
     }
 }
 

@@ -29,12 +29,28 @@
 // Set ANTIALIAS_FACTOR to 1 to disable anti-aliasing.
 #define ANTIALIAS_FACTOR    2
 
-#define FOV                 90
-
 
 typedef struct App_s            App;
 
 
+typedef enum {
+    SC_none,                                // No predefined scene.
+    SC_6_spheres_fov_90,
+    SC_6_spheres_fov_40,
+    SC_camera_testing_1_sphere_fov_90,
+    SC_camera_testing_4_spheres_fov_90,
+    SC_camera_testing_4_spheres_fov_40,
+} SceneConfig;
+
+typedef enum {
+    SK_none,                                // No predefined sky.
+    SK_ambient_07,
+    SK_gradient_blue,
+    SK_ambient_blue,
+} SkyConfig;
+
+
+#include "camera.h"
 #include "ray.h"
 #include "types.h"
 
@@ -47,7 +63,7 @@ struct App_s {
     uint32_t        windowHeight;
 
     Scene           scene;
-    Ray             camera;
+    Camera          camera;
 
     // // Precalculated camera angles for screen pixels
     // Angle           renderWindowPixelsHorAngles[WINDOW_WIDTH];
@@ -62,6 +78,13 @@ struct App_s {
 
 
 void log_err(char *err);
-// float fast_inv_sqrt(float number);
+void scene_6_spheres_fov_90(App *app);
+void scene_6_spheres_fov_40(App *app);
+void scene_camera_testing_1_sphere_fov_90(App *app);
+void scene_camera_testing_4_spheres_fov_90(App *app);
+void scene_camera_testing_4_spheres_fov_40(App *app);
+void sky_ambient_07(App *app);
+void sky_gradient_blue(App *app);
+void sky_ambient_blue(App *app);
 
 #endif // __MAIN_H__

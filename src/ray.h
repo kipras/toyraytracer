@@ -37,6 +37,7 @@ static inline void ray_trace_context_init(RTContext *context);
 
 /**
  * Sets `point` to a 3D coordinate, that is at `dist` distance along `ray`.
+ * IMPORTANT: this requires ray->direction to be a unit vector.
  */
 static inline void ray_point(Ray *ray, double dist, Vector3 *point);
 

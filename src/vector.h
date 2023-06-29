@@ -13,11 +13,11 @@ typedef struct Vector3_s        Vector3;
 
 
 struct Vector3_s {
-    // 2D plane coordinates.
+    // 2D plane (if looking from the top) coordinates.
     double x;
     double y;
 
-    // Depth/height coordinate.
+    // Height coordinate.
     double z;
 };
 
@@ -63,6 +63,13 @@ static inline void vector3_subtract_from(Vector3 *base, Vector3 *subtrahend);
 static inline double vector3_dot(Vector3 *v1, Vector3 *v2);
 
 /**
+ * Produces a cross product of vectors a x b and stores the result in res.
+ * Note that the order of a and b parameters is significant.
+ * If the a and b vectors are switched - then the resulting vector becomes opposite of the original.
+ */
+static inline void vector3_cross(Vector3 *a, Vector3 *b, Vector3 *res);
+
+/**
  * Multiplies the given vector `v` by the given `multiplier` and stores the result in `v`.
  */
 static inline void vector3_multiply_length(Vector3 *v, double multiplier);
@@ -103,7 +110,7 @@ extern void log_err(char *err);
 // static inline Vector3 * vector3_alloc()
 // {
 //     Vector3 *vec;
-//     vec = ralloc(sizeof(Vector3));
+//     vec = rtalloc(sizeof(Vector3));
 //     if (vec == NULL) {
 //         log_err("Fatal error: could not allocate Vector3. Out of memory?");
 //         exit(1);    // Exit program immediately, on memory allocation errors.
@@ -158,6 +165,13 @@ static inline void vector3_subtract_from(Vector3 *base, Vector3 *subtrahend)
 static inline double vector3_dot(Vector3 *v1, Vector3 *v2)
 {
     return v1->x*v2->x + v1->y*v2->y + v1->z*v2->z;
+}
+
+static inline void vector3_cross(Vector3 *a, Vector3 *b, Vector3 *res)
+{
+    res->x = (a->y * b->z) - (a->z * b->y);
+    res->y = (a->z * b->x) - (a->x * b->z);
+    res->z = (a->x * b->y) - (a->y * b->x);
 }
 
 static inline void vector3_multiply_length(Vector3 *v, double multiplier)

@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "color.h"
 #include "renderer.h"
 
@@ -25,47 +27,68 @@ void render_frame_img_antialiased(App *app, Color *img, uint32_t imgHeight, uint
 
 void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth)
 {
-    Ray ray = app->camera;
-    Ray unitRay;
+    // Ray ray = app->cameraCenterRay;
 
-    uint32_t imgMidHeight = imgHeight >> 1;
-    uint32_t imgMidWidth = imgWidth >> 1;
+    // uint32_t imgMidHeight = imgHeight >> 1;
+    // uint32_t imgMidWidth = imgWidth >> 1;
 
-    for (uint32_t imgY = 0; imgY < imgHeight; imgY++) {
-        // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
-        // Depth (z) remains unchanged at -1.
-        ray.direction.y = ((double)(imgHeight - imgY) / imgMidHeight) - 1;
+    for (uint32_t row = 0; row < imgHeight; row++) {
+        // Ray direction is from [v=1, u=-1] (top left corner) to [v=-1, u=1] (bottom right corner).
+        uint32_t imgV = imgHeight - row - 1;
+
+        // // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
+        // // Depth (z) remains unchanged at -1.
+        // ray.direction.y = ((double)(imgHeight - imgV) / imgMidHeight) - 1;
+        // // printf("\n");
+        // // printf("ray.direction.y = %f\n", ray.direction.y);
+
+        // ray.direction.z = app->camera.imgVToCamRayDirZ[imgV];
+
         // printf("\n");
-        // printf("ray.direction.y = %f\n", ray.direction.y);
-        uint32_t imgYArrOffset = imgY * imgWidth;
-        for (uint32_t imgX = 0; imgX < imgWidth; imgX++) {
-            ray.direction.x = ((double)imgX / imgMidWidth) - 1;
-            // printf("ray.direction.x = %f\n", ray.direction.x);
+        // printf("[imgV=%d] ray.direction.z = %f\n", imgV, ray.direction.z);
+        // printf("[imgV=%d] [row=%d]\n", imgV, row);
+
+        uint32_t camRaysArrRowOffset = imgV * imgWidth;
+        uint32_t imgArrRowOffset = row * imgWidth;
+        for (uint32_t imgU = 0; imgU < imgWidth; imgU++) {
+            // ray.direction.x = ((double)imgU / imgMidWidth) - 1;
+            // // printf("ray.direction.x = %f\n", ray.direction.x);
+
+            // ray.direction.x = app->camera.imgUToCamRayDirX[imgU];
+            // ray.direction.y = app->camera.imgUToCamRayDirY[imgU];
+
+            Ray *ray = &app->camera.camRays[camRaysArrRowOffset + imgU];
+
+            // printf("[imgV=%d, imgU=%d] ray.direction.x = %f\n", imgV, imgU, ray.direction.x);
+            // printf("[imgV=%d, imgU=%d] ray.direction.y = %f\n", imgV, imgU, ray.direction.y);
+
+            // printf("[imgV=%d, imgU=%d] vector3_length(ray.direction) = %f\n", imgV, imgU, vector3_length(&ray->direction));
 
             RTContext rtContext;
             ray_trace_context_init(&rtContext);
 
-            // We will pass a ray, where `direction` is a unit vector, because this is needed for dot product later on, by some materials.
-            // That way those materials don't need to compute the unit vector themselves.
-            unitRay = ray;
-            vector3_to_unit(&unitRay.direction);
+            // // We will pass a ray, where `direction` is a unit vector, because this is needed for dot product later on, by some materials.
+            // // That way those materials don't need to compute the unit vector themselves.
+            // Ray unitRay = ray;
+            // vector3_to_unit(&unitRay.direction);
 
             Color color;
-            if (! ray_trace(&rtContext, &app->scene, &unitRay, &color)) {
+            // if (! ray_trace(&rtContext, &app->scene, &unitRay, &color)) {
+            if (! ray_trace(&rtContext, &app->scene, ray, &color)) {
                 color = (Color)COLOR_BLACK;
 
                 // // Ray didn't hit anything - rendering background instead.
                 // color = render_background_pixel(app, &ray);
             }
 
-            img[imgYArrOffset + imgX] = color;
+            img[imgArrRowOffset + imgU] = color;
         }
     }
 }
 
 // static inline Color render_background_pixel(App *app, Ray *ray)
 // {
-//     if (ray->direction.y > app->camera.origin.y) {
+//     if (ray->direction.y > app->cameraCenterRay.origin.y) {
 //         // Draw a sky pixel.
 //         return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
 //     } else {
@@ -74,7 +97,7 @@ void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidt
 //         // return (Color)COLOR_GROUND;
 //     }
 
-//     // if (ray->direction.y > app->camera.origin.y) {
+//     // if (ray->direction.y > app->cameraCenterRay.origin.y) {
 //     //     // Draw a sky pixel.
 //     //     return gradient(&skyBottomColor, &skyTopColor, 0, 1, ray->direction.y);
 //     // } else {
@@ -153,10 +176,10 @@ void draw_img_to_screen(App *app, Color *img, uint32_t imgHeight, uint32_t imgWi
     SDL_RenderClear(app->renderer);
 
     // Draw the image to the SDL buffer.
-    uint32_t imgYArrOffset = 0;
-    for (uint32_t imgY = 0; imgY < imgHeight; imgY++) {
-        for (uint32_t imgX = 0; imgX < imgWidth; imgX++) {
-            Color *color = &img[imgYArrOffset + imgX];
+    uint32_t imgVArrOffset = 0;
+    for (uint32_t imgV = 0; imgV < imgHeight; imgV++) {
+        for (uint32_t imgU = 0; imgU < imgWidth; imgU++) {
+            Color *color = &img[imgVArrOffset + imgU];
 
             // Convert colors expressed as floating point (in the range [0, 1]) into 8 bit integers.
             // And cap them, because inputs may actually be > 1.0.
@@ -165,9 +188,9 @@ void draw_img_to_screen(App *app, Color *img, uint32_t imgHeight, uint32_t imgWi
                     blue  = min(255, round(min(1.0, color->blue)  * 256));
 
             SDL_SetRenderDrawColor(app->renderer, red, green, blue, 255);
-            SDL_RenderDrawPoint(app->renderer, imgX, imgY);
+            SDL_RenderDrawPoint(app->renderer, imgU, imgV);
         }
-        imgYArrOffset += imgWidth;
+        imgVArrOffset += imgWidth;
     }
 
     // Draw the SDL buffer to the screen.

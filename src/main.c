@@ -8,6 +8,7 @@
 
 #include "main.h"
 
+#include "camera.h"
 #include "random.h"
 #include "renderer.h"
 #include "rtalloc.h"
@@ -18,7 +19,7 @@
 static void init_app(App *app);
 static void init_screen(App *app);
 static void init_world(App *app);
-static void init_spheres(App *app);
+static void init_scene(App *app);
 static void add_light(App *app, Sphere sphere, Color color);
 static void add_sphere(App *app, Sphere sphere);
 static void run_render_loop(App *app);
@@ -81,58 +82,150 @@ static void init_screen(App *app)
 
 static void init_world(App *app)
 {
-    app->camera = (Ray){
+    // Our camera is centered at [0, 0, 0] and looking towards the y axis.
+    Vector3 camDirection = {.x = 0, .y = 1, .z = 0};
+    vector3_to_unit(&camDirection);     // camera direction vector must
+    Ray camCenterRay = {
         .origin     = (Vector3){.x = 0, .y = 0, .z = 0},
-        .direction  = (Vector3){.x = 0, .y = 0, .z = -1},
+        .direction  = camDirection,
     };
 
-    // app->camera.origin      = (Vector3){.x = 0, .y = 0, .z = 0};
-    // app->camera.direction   = (Vector3){.x = 0, .y = 0, .z = -1};
+    cam_set(&app->camera, &camCenterRay, app->windowHeight * ANTIALIAS_FACTOR, app->windowWidth * ANTIALIAS_FACTOR);
 
-    // // Camera is looking parallel to the ground (i.e. z=0 (from the range [-1; 1])), in the direction of y=1, x=0 (i.e. "up")
-    // app->camera.direction.hor  = 0;     // Look in the direction of y=1, x=0 (i.e. "up" on the horizontal plane)
-    // app->camera.direction.vert = 0;     // Look "sideways" on the vertical plane
-
-    // app->fov = FOV;
-
-    // app->scene.groundHeight = 0;
-    // app->scene.groundColor = (Color)COLOR_GROUND;
-
-    // app->scene.skyHeight = 0;
-    // app->scene.skyColor = (Color)COLOR_SKY;
-
-    init_spheres(app);
+    init_scene(app);
 }
 
-static void init_spheres(App *app)
+static void init_scene(App *app)
 {
     app->scene.spheresLength = 0;
 
-    // add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -30}, .radius = 10, .material = &matMatte, .color = COLOR_RED});        // Center sphere.
-    add_sphere(app, (Sphere){.center = {.x = 24, .y = 17, .z = -40}, .radius = 10, .material = &matMatte, .color = COLOR_GREEN});    // Top right sphere.
-    add_sphere(app, (Sphere){.center = {.x = -18, .y = -4, .z = -30}, .radius = 5, .material = &matMatte, .color = COLOR_BLUE});     // Center left sphere (small).
+    // Choose one of the available scenes (descriptions inside each function).
+    SceneConfig sc = SC_6_spheres_fov_90;
+    switch (sc) {
+        case SC_none:
+            break;
 
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = -30}, .radius = 10, .material = &matMatte, .color = COLOR_RED});       // Center sphere (the big one).
+        case SC_6_spheres_fov_90:
+            scene_6_spheres_fov_90(app); break;
 
-    add_sphere(app, (Sphere){.center = {.x = -8, .y = -8, .z = -12.5}, .radius = 3, .material = &matMatte, .color = COLOR_BLUE});   // Bottom left sphere (small).
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = -8, .z = -12.5}, .radius = 3, .material = &matMatte, .color = COLOR_RED});     // Bottom center sphere (small).
-    add_sphere(app, (Sphere){.center = {.x = 8, .y = -8, .z = -12.5}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});   // Bottom right sphere (small).
+        case SC_6_spheres_fov_40:
+            scene_6_spheres_fov_40(app); break;
 
-    add_light(app, (Sphere){.center = {.x = -9, .y = 10, .z = -20}, .radius = 3, .material = &matLight}, (Color)COLOR_LIGHT);    // A light.
+        case SC_camera_testing_1_sphere_fov_90:
+            scene_camera_testing_1_sphere_fov_90(app); break;
 
-    // add_sphere(app, (Sphere){.center = {.x = 0, .y = -2000, .z = -400}, .radius = 2000, .material = &matGround, .color = COLOR_GROUND});  // Ground sphere.
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = -2000, .z = -220}, .radius = 2000, .material = &matMatte, .color = COLOR_GROUND});  // Ground sphere.
+        case SC_camera_testing_4_spheres_fov_90:
+            scene_camera_testing_4_spheres_fov_90(app); break;
 
-    // add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matGradientSky, .color = COLOR_BLACK});  // Sky sphere (COLOR_BLACK is the Color equivalent of NULL).
+        case SC_camera_testing_4_spheres_fov_40:
+            scene_camera_testing_4_spheres_fov_40(app); break;
+    }
 
-    // add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color)COLOR_SKY);      // Sky sphere, providing an ambient light.
+    // Choose one of the available sky configurations (descriptions inside each function).
+    SkyConfig sk = SK_gradient_blue;
+    switch (sk) {
+        case SK_none:
+            break;
 
-    add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color)COLOR_AMBIENT_LIGHT);      // Sky sphere, providing an ambient light.
+        case SK_ambient_07:
+            sky_ambient_07(app); break;
+
+        case SK_gradient_blue:
+            sky_gradient_blue(app); break;
+
+        case SK_ambient_blue:
+            sky_ambient_blue(app); break;
+    }
+}
+
+void scene_6_spheres_fov_90(App *app)
+{
+    // Standard 6 sphere scene. FOV 90.
+
+    // add_sphere(app, (Sphere){.center = {.x = 0, .y = 30, .z = 0}, .radius = 10, .material = &matMatte, .color = COLOR_RED});        // Center sphere.
+    add_sphere(app, (Sphere){.center = {.x = 24, .y = 40, .z = 17}, .radius = 10, .material = &matMatte, .color = COLOR_GREEN});    // Top right sphere.
+    add_sphere(app, (Sphere){.center = {.x = -18, .y = 30, .z = -4}, .radius = 5, .material = &matMatte, .color = COLOR_BLUE});     // Center left sphere (small).
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 30, .z = 0}, .radius = 10, .material = &matMatte, .color = COLOR_RED});       // Center sphere (the big one).
+
+    add_sphere(app, (Sphere){.center = {.x = -8, .y = 12.5, .z = -8}, .radius = 3, .material = &matMatte, .color = COLOR_BLUE});   // Bottom left sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 12.5, .z = -8}, .radius = 3, .material = &matMatte, .color = COLOR_RED});     // Bottom center sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 8, .y = 12.5, .z = -8}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});   // Bottom right sphere (small).
+
+    add_light(app, (Sphere){.center = {.x = -9, .y = 20, .z = 10}, .radius = 3, .material = &matLight}, (Color)COLOR_LIGHT);    // A light.
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 220, .z = -2000}, .radius = 2000, .material = &matMatte, .color = COLOR_GROUND});  // Ground sphere.
+}
+
+void scene_6_spheres_fov_40(App *app)
+{
+    // Standard 6 sphere scene. FOV 40.
+
+    // add_sphere(app, (Sphere){.center = {.x = 0, .y = 30, .z = 0}, .radius = 10, .material = &matMatte, .color = COLOR_RED});        // Center sphere.
+    add_sphere(app, (Sphere){.center = {.x = 24, .y = 40, .z = 17}, .radius = 10, .material = &matMatte, .color = COLOR_GREEN});    // Top right sphere.
+    add_sphere(app, (Sphere){.center = {.x = -18, .y = 30, .z = -4}, .radius = 5, .material = &matMatte, .color = COLOR_BLUE});     // Center left sphere (small).
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 30, .z = 0}, .radius = 10, .material = &matMatte, .color = COLOR_RED});       // Center sphere (the big one).
+
+    add_sphere(app, (Sphere){.center = {.x = -8, .y = 12.5, .z = -8}, .radius = 3, .material = &matMatte, .color = COLOR_BLUE});   // Bottom left sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 12.5, .z = -8}, .radius = 3, .material = &matMatte, .color = COLOR_RED});     // Bottom center sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 8, .y = 12.5, .z = -8}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});   // Bottom right sphere (small).
+
+    add_light(app, (Sphere){.center = {.x = -9, .y = 20, .z = 10}, .radius = 3, .material = &matLight}, (Color)COLOR_LIGHT);    // A light.
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 220, .z = -2000}, .radius = 2000, .material = &matMatte, .color = COLOR_GROUND});  // Ground sphere.
+}
+
+void scene_camera_testing_1_sphere_fov_90(App *app)
+{
+    // CAMERA TESTING SETUP: single big center sphere.
+    // For rectangular image resolution only. For FOV 90.
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 1.4142135623730950488016887242097, .z = 0}, .radius = 1, .material = &matMatte, .color = COLOR_RED});
+}
+
+void scene_camera_testing_4_spheres_fov_90(App *app)
+{
+    // CAMERA TESTING SETUP: 4 spheres at top/right/bottom/left, diameter of each is 1/4 of screen width/height (i.e. they do not touch
+    // each other).
+    // For rectangular image resolution only. For FOV 90.
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 3.5355339059327376220042218105242, .z = 2.1213203435596425732025330863145}, .radius = 1, .material = &matMatte, .color = COLOR_RED});  // top
+    add_sphere(app, (Sphere){.center = {.x = -2.1213203435596425732025330863145, .y = 3.5355339059327376220042218105242, .z = 0}, .radius = 1, .material = &matMatte, .color = COLOR_RED}); // left
+    add_sphere(app, (Sphere){.center = {.x = 2.1213203435596425732025330863145, .y = 3.5355339059327376220042218105242, .z = 0}, .radius = 1, .material = &matMatte, .color = COLOR_RED});  // right
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 3.5355339059327376220042218105242, .z = -2.1213203435596425732025330863145}, .radius = 1, .material = &matMatte, .color = COLOR_RED}); // bottom
+}
+
+void scene_camera_testing_4_spheres_fov_40(App *app)
+{
+    // CAMERA TESTING SETUP: 4 spheres at top/right/bottom/left, diameter of each is 1/4 of screen width/height (i.e. they do not touch
+    // each other).
+    // For rectangular image resolution only. For FOV 40.
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 10.669157170675342809798718809418, .z = 2.8190778623577251521623278319742}, .radius = 1, .material = &matMatte, .color = COLOR_RED});  // top
+    add_sphere(app, (Sphere){.center = {.x = -2.8190778623577251521623278319742, .y = 10.669157170675342809798718809418, .z = 0}, .radius = 1, .material = &matMatte, .color = COLOR_RED}); // left
+    add_sphere(app, (Sphere){.center = {.x = 2.8190778623577251521623278319742, .y = 10.669157170675342809798718809418, .z = 0}, .radius = 1, .material = &matMatte, .color = COLOR_RED});  // right
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 10.669157170675342809798718809418, .z = -2.8190778623577251521623278319742}, .radius = 1, .material = &matMatte, .color = COLOR_RED}); // bottom
+}
+
+void sky_ambient_07(App *app)
+{
+    // Sky sphere, providing an ambient light (COLOR_BLACK is the Color equivalent of NULL).
+    add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color)COLOR_AMBIENT_LIGHT);
+}
+
+void sky_gradient_blue(App *app)
+{
+    // Sky sphere, providing a gradient (blue-white) light.
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matGradientSky, .color = COLOR_BLACK});
+}
+
+void sky_ambient_blue(App *app)
+{
+    // Sky sphere, providing a ambient blue-ish light.
+    add_light(app, (Sphere){.center = {.x = 0, .y = 0, .z = 0}, .radius = 20000, .material = &matLight}, (Color)COLOR_SKY);
 }
 
 static void add_light(App *app, Sphere sphere, Color color)
 {
-    MaterialLightData *matData = ralloc(sizeof(Color));
+    MaterialLightData *matData = rtalloc(sizeof(Color));
     matData->color = color;
     sphere.matData = matData;
 
@@ -234,19 +327,3 @@ static inline void output_go_up_one_line()
 {
     printf("\033[A");   // VT100 escape code to go one line up in the output.
 }
-
-// float fast_inv_sqrt(float number)
-// {
-//     long i;
-//     float x2, y;
-//     const float threehalfs = 1.5F;
-
-//     x2 = number * 0.5F;
-//     y  = number;
-//     i  = * ( long * ) &y;
-//     i  = 0x5f3759df - ( i >> 1 );
-//     y  = * ( float * ) &i;
-//     y  = y * ( threehalfs - ( x2 * y * y ) );
-
-//     return y;
-// }

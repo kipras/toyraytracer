@@ -14,13 +14,13 @@
  */
 
 
-#define rfree(p)            free(p)
+#define rtfree(p)           free(p)
 
 
-static inline void * ralloc(size_t sz);
+static inline void * rtalloc(size_t sz);
 
 
-static inline void * ralloc(size_t sz)
+static inline void * rtalloc(size_t sz)
 {
     void *p = malloc(sz);
     if (p == NULL) {
