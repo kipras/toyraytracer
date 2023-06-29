@@ -9,13 +9,6 @@
 #include "vector.h"
 
 
-double fovHorizDeg;
-double fovVertDeg;
-
-double fovHorizRad;
-double fovVertRad;
-
-
 /**
  * v6
  * Attempting to re-start (almost) from scratch - using the "ray tracing in a weekend" camera algorithm.
@@ -24,16 +17,11 @@ double fovVertRad;
  * needed). Features as in camera looking up/down for example (we'll start without this).
  *
  * Result: the spheres are skewed towards the sides of the image - they are "eggs" (i.e. reverse of being "blunt"). They are skewed towards
- * each side (top/left/right/bottom).
+ * each side (top/left/right/bottom). This is visible with FOV 90. With FOV 40 - it is barely noticeable.
  */
 
 void cam_set(Camera *cam, Ray *centerRay, uint16_t imgHeight, uint16_t imgWidth)
 {
-    fovHorizDeg = FOV_HORIZONTAL;
-    fovVertDeg = ((double)(WINDOW_HEIGHT * fovHorizDeg)) / WINDOW_WIDTH;
-    fovHorizRad = ((double)fovHorizDeg / 180) * M_PI;
-    fovVertRad = ((double)fovVertDeg / 180) * M_PI;
-
     cam->camCenterRay = *centerRay;
 
     // Allocate the cam->camRays array for pre-computed rays.
@@ -47,8 +35,10 @@ void cam_set(Camera *cam, Ray *centerRay, uint16_t imgHeight, uint16_t imgWidth)
     // Calculate the width and height of the viewing plane, relative to the length of the viewing direction vector.
     // The viewing direction vector (the vector to the viewing plane's center) is a unit vector (i.e. of length 1).
     // So the viewing plane's width and height are multiples of viewing direction vector's length.
+    double fovHorizDeg = FOV_HORIZONTAL;
+    double fovHorizRad = ((double)fovHorizDeg / 180) * M_PI;
     double planeWidth  = tan(fovHorizRad/2) * dirVectorLen * 2;
-    double planeHeight = tan(fovVertRad/2) * dirVectorLen * 2;
+    double planeHeight = planeWidth * ((double)WINDOW_HEIGHT / WINDOW_WIDTH);
 
     Vector3 dirReverse = *dir;
     vector3_to_unit(&dirReverse);

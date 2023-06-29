@@ -95,6 +95,12 @@ static void init_world(App *app)
             camDirection    = (Vector3){.x = 0, .y = 1, .z = -0.2};
             break;
 
+        case CC_down__fov_40:
+            // Camera is high up above ground and looking straight down onto the scene.
+            camOrigin       = (Vector3){.x = 0, .y = 80, .z = 200};
+            camDirection    = (Vector3){.x = 0, .y = 0.001, .z = -1};
+            break;
+
         default:
             log_err("Fatal error: unknown camera configuration used: %d", cc);
             exit(1);

@@ -38,6 +38,7 @@ typedef struct App_s            App;
 typedef enum {
     CC_z_0,
     CC_z_15_downwards,
+    CC_down__fov_40,
 } CameraConfig;
 
 #define CAMERA_CONFIG   CC_z_15_downwards

@@ -11,12 +11,6 @@
 // But i do mean _theoretically_, because a 360 degree FOV doesn't make sense either :)
 #define FOV_HORIZONTAL      40
 
-extern double fovHorizDeg;
-extern double fovVertDeg;
-
-extern double fovHorizRad;
-extern double fovVertRad;
-
 
 typedef struct Camera_s         Camera;
 
