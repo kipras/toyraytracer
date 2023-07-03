@@ -74,8 +74,9 @@ typedef enum {
 
 
 struct App_s {
-    SDL_Window     *window;
-    SDL_Renderer   *renderer;
+    SDL_Window     *sdlWindow;
+    SDL_Renderer   *sdlRenderer;
+    SDL_Texture    *sdlTexture;
 
     uint32_t        windowWidth;
     uint32_t        windowHeight;

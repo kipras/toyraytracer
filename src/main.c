@@ -57,8 +57,9 @@ static void init_app(App *app)
     clock_gettime(CLOCK_MONOTONIC, &tnow);
     random_seed(tnow.tv_nsec);
 
-    app->window = NULL;
-    app->renderer = NULL;
+    app->sdlWindow = NULL;
+    app->sdlRenderer = NULL;
+    app->sdlTexture = NULL;
 }
 
 static void init_screen(App *app)
@@ -66,13 +67,15 @@ static void init_screen(App *app)
     app->windowWidth    = WINDOW_WIDTH;
     app->windowHeight   = WINDOW_HEIGHT;
 
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_CreateWindowAndRenderer(app->windowWidth, app->windowHeight, 0, &app->window, &app->renderer);
-    // SDL_RenderSetScale(renderer, 4, 4);
+    renderer_init(app);
 
-    SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(app->renderer);
-    SDL_RenderPresent(app->renderer);
+    // SDL_Init(SDL_INIT_VIDEO);
+    // SDL_CreateWindowAndRenderer(app->windowWidth, app->windowHeight, 0, &app->window, &app->renderer);
+    // // SDL_RenderSetScale(renderer, 4, 4);
+
+    // SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
+    // SDL_RenderClear(app->renderer);
+    // SDL_RenderPresent(app->renderer);
 }
 
 static void init_world(App *app)

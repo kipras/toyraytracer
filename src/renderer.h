@@ -7,6 +7,11 @@
 
 
 /**
+ * Initializes the renderer. Must be called once and only once, during startup.
+ */
+void renderer_init(App *app);
+
+/**
  * Similar to render_frame_img(), but renders an anti-aliased image, by averaging ANTIALIAS_FACTOR^2 pixels into 1 (with grid algorithm).
  */
 void render_frame_img_antialiased(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth);

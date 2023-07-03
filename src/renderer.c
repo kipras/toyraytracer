@@ -112,8 +112,8 @@ void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidt
 //     //     .green = (ray.direction.y + 1) * 128,
 //     //     .blue = 0,
 //     // };
-//     // SDL_SetRenderDrawColor(app->renderer, color.red, color.green, color.blue, 255);
-//     // SDL_RenderDrawPoint(app->renderer, screenX, screenY);
+//     // SDL_SetRenderDrawColor(app->sdlRenderer, color.red, color.green, color.blue, 255);
+//     // SDL_RenderDrawPoint(app->sdlRenderer, screenX, screenY);
 // }
 
 static void image_antialias(Color *srcImg, Color *dstImg, uint32_t dstHeight, uint32_t dstWidth)
@@ -169,13 +169,54 @@ void blend_frame(Color *summedFrames, uint32_t frameNum, Color *frameImg, Color 
     }
 }
 
+void renderer_init(App *app)
+{
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_CreateWindowAndRenderer(app->windowWidth, app->windowHeight, 0, &app->sdlWindow, &app->sdlRenderer);
+    // SDL_RenderSetScale(renderer, 4, 4);
+
+    // SDL_SetRenderDrawColor(app->sdlRenderer, 0, 0, 0, 255);
+    // SDL_RenderClear(app->sdlRenderer);
+    // SDL_RenderPresent(app->sdlRenderer);
+
+    // Initialize the SDL texture to which we will draw everything.
+    app->sdlTexture = SDL_CreateTexture(
+        app->sdlRenderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, app->windowWidth, app->windowHeight);
+
+    if (app->sdlTexture == NULL) {
+        const char *err = SDL_GetError();
+        log_err("Fatal SDL_CreateTexture() error: %s", err);
+        exit(1);
+    }
+
+    int status = SDL_SetTextureBlendMode(app->sdlTexture, SDL_BLENDMODE_NONE);
+    if (status != 0) {
+        const char *err = SDL_GetError();
+        log_err("Fatal SDL_SetTextureBlendMode() error: %s", err);
+        exit(1);
+    }
+}
+
 void draw_img_to_screen(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth)
 {
-    // Clear the existing SDL image buffer (it becomes all black).
-    SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(app->renderer);
+    // // Clear the existing SDL image buffer (it becomes all black).
+    // SDL_SetRenderDrawColor(app->sdlRenderer, 0, 0, 0, 255);
+    // SDL_RenderClear(app->sdlRenderer);
 
-    // Draw the image to the SDL buffer.
+    int status;
+    uint8_t *pixels;
+    int pitch;
+    status = SDL_LockTexture(app->sdlTexture, NULL, (void **)&pixels, &pitch);
+    if (status != 0) {
+        const char *err = SDL_GetError();
+        log_err("Fatal SDL_LockTexture() error: %s", err);
+        exit(1);
+    }
+
+    // Draw the image to a pixel array.
+    // If we are using a locked streaming texture - then we are drawing directly into the SDL texture's pixel array.
+    // Otherwise (we are using a static texture) - we will later copy this pixel array into the SDL texture using
+    // SDL_UpdateTexture().
     uint32_t imgVArrOffset = 0;
     for (uint32_t imgV = 0; imgV < imgHeight; imgV++) {
         for (uint32_t imgU = 0; imgU < imgWidth; imgU++) {
@@ -187,12 +228,29 @@ void draw_img_to_screen(App *app, Color *img, uint32_t imgHeight, uint32_t imgWi
                     green = min(255, round(min(1.0, color->green) * 256)),
                     blue  = min(255, round(min(1.0, color->blue)  * 256));
 
-            SDL_SetRenderDrawColor(app->renderer, red, green, blue, 255);
-            SDL_RenderDrawPoint(app->renderer, imgU, imgV);
+            uint32_t pixelsArrOffset = (imgVArrOffset + imgU) * 3;
+            pixels[pixelsArrOffset] = red;
+            pixels[pixelsArrOffset + 1] = green;
+            pixels[pixelsArrOffset + 2] = blue;
         }
         imgVArrOffset += imgWidth;
     }
 
-    // Draw the SDL buffer to the screen.
-    SDL_RenderPresent(app->renderer);
+    SDL_UnlockTexture(app->sdlTexture);
+
+    status = SDL_RenderClear(app->sdlRenderer);
+    if (status != 0) {
+        const char *err = SDL_GetError();
+        log_err("Fatal SDL_RenderClear() error: %s", err);
+        exit(1);
+    }
+
+    status = SDL_RenderCopy(app->sdlRenderer, app->sdlTexture, NULL, NULL);
+    if (status != 0) {
+        const char *err = SDL_GetError();
+        log_err("Fatal SDL_RenderCopy() error: %s", err);
+        exit(1);
+    }
+
+    SDL_RenderPresent(app->sdlRenderer);
 }
