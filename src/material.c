@@ -54,13 +54,24 @@ static Color matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
     Vector3 normal;
     calc_sphere_surface_normal(sphere, pos, &normal);
 
-    Vector3 unitSphereRandomPoint;
-    random_point_in_unit_sphere(&unitSphereRandomPoint);
-    vector3_to_unit(&unitSphereRandomPoint);                // Must convert to a unit vector, otherwise addition math will be wrong.
-
+    // Generate a random point/vector for the scattered ray that will scatter from the `pos` (where the incoming ray
+    // hits this surface). How we will generate the scattered ray depends on MATTE_DIFFUSE_TYPE.
+    MatteDiffuseAlgo mda = MATTE_DIFFUSE_ALGO;
     Vector3 bouncedRayDirection;
-    vector3_add_to(&normal, &unitSphereRandomPoint, &bouncedRayDirection);
-    vector3_to_unit(&bouncedRayDirection);
+    if (mda == MDA_randomVectorInHemisphere) {
+        random_point_in_hemisphere(&bouncedRayDirection, &normal);
+        vector3_to_unit(&bouncedRayDirection);
+    } else {
+        // MDA_randomVectorInUnitSphere or MDA_randomUnitVectorInUnitSphere
+        Vector3 unitSphereRandomPoint;
+        random_point_in_unit_sphere(&unitSphereRandomPoint);
+        if (mda == MDA_randomUnitVectorInUnitSphere) {
+            // Must convert to a unit vector, otherwise addition math will be wrong.
+            vector3_to_unit(&unitSphereRandomPoint);
+        }
+        vector3_add_to(&normal, &unitSphereRandomPoint, &bouncedRayDirection);
+        vector3_to_unit(&bouncedRayDirection);
+    }
 
     Ray bouncedRay = (Ray){
         .origin = *pos,

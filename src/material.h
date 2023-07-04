@@ -4,7 +4,8 @@
 
 typedef struct Material_s           Material;
 typedef struct MaterialLightData_s  MaterialLightData;
-typedef enum   MaterialType_e       MaterialType;
+// typedef enum   MaterialType_e       MaterialType;
+typedef enum   MatteDiffuseAlgo_e   MatteDiffuseAlgo;
 
 
 #include "ray.h"
@@ -37,6 +38,15 @@ struct MaterialLightData_s {
     // as a matte object. Experiment to get the right value.
     Color color;
 };
+
+enum MatteDiffuseAlgo_e {
+    MDA_randomVectorInUnitSphere = 1,
+    MDA_randomUnitVectorInUnitSphere,
+    MDA_randomVectorInHemisphere,
+};
+
+#define MATTE_DIFFUSE_ALGO      MDA_randomUnitVectorInUnitSphere
+
 
 
 // "Matte" material (uses diffuse/Lambertian reflection).

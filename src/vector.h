@@ -103,6 +103,19 @@ static inline void random_point_in_unit_sphere__random_algo(Vector3 *point);
  */
 static inline void random_point_in_unit_sphere__trigonometric_algo(Vector3 *point);
 
+/**
+ * Generates a random point in a hemisphere (half of a sphere) and stores it in the `point` parameter.
+ * This is used for generating rays that scatter off a surface.
+ *
+ * A surface normal vector needs to be passed as `normal`. Then, imagine that the starting point of the vector is a center of a sphere.
+ * The direction of the `normal` vector points towards the top of the sphere.
+ * What this function then does is it generates a random point within the **top half** of this sphere.
+ *
+ * In terms of generating rays that scatter off a surface - this generates a random direction (in a perfect uniform distribution) for a ray
+ * to scatter off a surface, where the surface normal is passed in the `normal` parameter.
+ */
+static inline void random_point_in_hemisphere(Vector3 *point, Vector3 *normal);
+
 
 // static inline Vector3 * vector3_alloc()
 // {
@@ -251,6 +264,20 @@ static inline void random_point_in_unit_sphere__trigonometric_algo(Vector3 *poin
     point->x = cos(random_double_exc(0, M_PI));
     point->y = sin(random_double_exc(0, M_PI));
     point->z = cos(random_double_exc(0, M_PI));
+}
+
+static inline void random_point_in_hemisphere(Vector3 *point, Vector3 *normal)
+{
+    // Generate a random point in a unit sphere.
+    random_point_in_unit_sphere(point);
+
+    // If the random point vector goes in the direction "away" from the surface normal vector (the angle between the
+    // `point` vector and the surface `normal` vector is between (90, 180] degrees) - then we simply invert the `point`
+    // vector.
+    // That way we always generate a `point` vector in the same hemisphere (half of a sphere) as the `normal` vector.
+    if (vector3_dot(point, normal) < 0.0) {
+        vector3_multiply_length(point, -1.0);
+    }
 }
 
 #endif // __VECTOR_H__
