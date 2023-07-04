@@ -15,11 +15,17 @@ struct Color_s {
     double  blue;
 };
 
-#define COLOR_BLACK { 0, 0, 0}
-#define COLOR_WHITE { 1, 1, 1}
-#define COLOR_RED   { 1, 0, 0}
-#define COLOR_GREEN { 0, 1, 0}
-#define COLOR_BLUE  { 0, 0, 1}
+#define COLOR_BLACK         {    0,    0,    0}
+#define COLOR_WHITE         {    1,    1,    1}
+#define COLOR_RED           {    1,    0,    0}
+#define COLOR_HALF_RED      {    1,  0.5,  0.5}
+#define COLOR_QUARTER_RED   {    1, 0.75, 0.75}
+#define COLOR_GREEN         {    0,    1,    0}
+#define COLOR_HALF_GREEN    {  0.5,    1,  0.5}
+#define COLOR_QUARTER_GREEN { 0.75,    1, 0.75}
+#define COLOR_BLUE          {    0,    0,    1}
+#define COLOR_HALF_BLUE     {  0.5,  0.5,    1}
+#define COLOR_QUARTER_BLUE  { 0.75, 0.75,    1}
 
 #define COLOR_GROUND    {0.586, 0.750, 0.340}     // We tried to go for the color of grass(-ish) here.
 #define COLOR_SKY       {0.633, 0.797, 0.890}

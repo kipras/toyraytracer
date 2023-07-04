@@ -48,7 +48,12 @@ static inline void vector3_add_to(Vector3 *v1, Vector3 *v2, Vector3 *result);
 // static inline Vector3 * vector3_add(Vector3 *v1, Vector3 *v2);
 
 /**
- * Subtracts the `subtrahend` vector from the `base` vector.
+ * Subtracts the `subtrahend` vector from the `minuend` vector and stores the result in `res`.
+ */
+static inline void vector3_subtract(Vector3 *minuend, Vector3 *subtrahend, Vector3 *res);
+
+/**
+ * Subtracts the `subtrahend` vector from the `base` vector and stores the result in `base`.
  */
 static inline void vector3_subtract_from(Vector3 *base, Vector3 *subtrahend);
 
@@ -63,11 +68,18 @@ static inline void vector3_subtract_from(Vector3 *base, Vector3 *subtrahend);
 static inline double vector3_dot(Vector3 *v1, Vector3 *v2);
 
 /**
- * Produces a cross product of vectors a x b and stores the result in res.
- * Note that the order of a and b parameters is significant.
- * If the a and b vectors are switched - then the resulting vector becomes opposite of the original.
+ * Produces a cross product of vectors a x b and stores the result in `res`.
+ * Note that the order of `a` and `b` parameters is significant.
+ * If the `a` and `b` vectors are switched - then the resulting vector becomes opposite of the original.
  */
 static inline void vector3_cross(Vector3 *a, Vector3 *b, Vector3 *res);
+
+/**
+ * Multiplies vectors `a` and `b` and stores the result in `res`.
+ * Two vectors are multiplied by multiplying the corresponding values of each individual cooordinate.
+ * I.e. res = { .x = a.x*b.x, .y = a.y*b.y, .z = a.z*b.z }
+ */
+static inline void vector3_multiply(Vector3 *a, Vector3 *b, Vector3 *res);
 
 /**
  * Multiplies the given vector `v` by the given `multiplier` and stores the result in `v`.
@@ -155,6 +167,13 @@ static inline void vector3_add_to(Vector3 *v1, Vector3 *v2, Vector3 *result)
 //     return rvec;
 // }
 
+static inline void vector3_subtract(Vector3 *minuend, Vector3 *subtrahend, Vector3 *res)
+{
+    res->x = minuend->x - subtrahend->x;
+    res->y = minuend->y - subtrahend->y;
+    res->z = minuend->z - subtrahend->z;
+}
+
 static inline void vector3_subtract_from(Vector3 *base, Vector3 *subtrahend)
 {
     base->x -= subtrahend->x;
@@ -182,6 +201,13 @@ static inline void vector3_cross(Vector3 *a, Vector3 *b, Vector3 *res)
     res->x = (a->y * b->z) - (a->z * b->y);
     res->y = (a->z * b->x) - (a->x * b->z);
     res->z = (a->x * b->y) - (a->y * b->x);
+}
+
+static inline void vector3_multiply(Vector3 *a, Vector3 *b, Vector3 *res)
+{
+    res->x = a->x * b->x;
+    res->y = a->y * b->y;
+    res->z = a->z * b->z;
 }
 
 static inline void vector3_multiply_length(Vector3 *v, double multiplier)

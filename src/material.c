@@ -1,3 +1,4 @@
+#include <float.h>
 #include <stdio.h>
 
 #include "material.h"
@@ -13,6 +14,8 @@ static Color shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sp
 static Color sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 static Color ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected);
 
 
 Material matMatte = {
@@ -36,6 +39,9 @@ Material matGround = {
 Material matLight = {
     // .type = MT_Ground,
     .hit = light_hit,
+};
+Material matMetal = {
+    .hit = metal_hit,
 };
 
 
@@ -197,7 +203,7 @@ static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
 
     // printf("\nlight_hit()\n");
 
-    MaterialLightData *matData = sphere->matData;
+    MaterialDataLight *matData = sphere->matData;
 
     // printf("matData = %p\n", matData);
     // printf("matData->color .red = %f, .green = %f, .blue = %f", matData->color.red, matData->color.green, matData->color.blue);
@@ -206,3 +212,65 @@ static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
     return matData->color;
 }
 
+static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+{
+    (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
+    (void)(ray);
+    (void)(rtContext);
+    (void)(pos);
+
+    // printf("\nlight_hit()\n");
+
+    // A metal surface does a mirror-like reflection of incoming light, along the surface normal.
+
+    Vector3 normal;
+    calc_sphere_surface_normal(sphere, pos, &normal);
+
+    Vector3 bouncedRayDirection;
+    MaterialDataMetal *matData = sphere->matData;
+    mirror_reflect(&ray->direction, &normal, matData->fuzziness, &bouncedRayDirection);
+
+    Ray bouncedRay = (Ray){
+        .origin = *pos,
+        .direction = bouncedRayDirection,
+    };
+
+    Color bouncedRayIncomingColor;
+    bool traceSuccess = ray_trace(rtContext, scene, &bouncedRay, &bouncedRayIncomingColor);
+
+    // printf("traceSuccess = %d\n", traceSuccess);
+
+    if (! traceSuccess) {
+        // Could not find any incoming color (light), so just shade this pixel of the sphere with black.
+        return (Color)COLOR_BLACK;
+    }
+
+    Color *sphereColor = &sphere->color;
+
+    return (Color){
+        .red    = sphereColor->red   * bouncedRayIncomingColor.red,
+        .green  = sphereColor->green * bouncedRayIncomingColor.green,
+        .blue   = sphereColor->blue  * bouncedRayIncomingColor.blue,
+    };
+}
+
+static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected)
+{
+    // Mirror reflection ray direction is calculated by formula: reflected = incoming + 2b
+    // Where b = normal * vector3_dot(-incoming, normal)
+    //
+    // Or, the same can be expressed as: reflected = incoming - (2 * normal * vector3_dot(incoming, normal))
+
+    Vector3 b2 = *normal;
+    vector3_multiply_length(&b2, 2 * vector3_dot(incoming, normal));
+
+    vector3_subtract(incoming, &b2, reflected);
+
+    if (fuzziness > DBL_EPSILON) {
+        Vector3 randomPointInUnitSphere;
+        random_point_in_unit_sphere(&randomPointInUnitSphere);
+        vector3_multiply_length(&randomPointInUnitSphere, fuzziness);
+
+        vector3_add_to(reflected, &randomPointInUnitSphere, reflected);
+    }
+}

@@ -3,7 +3,8 @@
 
 
 typedef struct Material_s           Material;
-typedef struct MaterialLightData_s  MaterialLightData;
+typedef struct MaterialDataLight_s  MaterialDataLight;
+typedef struct MaterialDataMetal_s  MaterialDataMetal;
 // typedef enum   MaterialType_e       MaterialType;
 typedef enum   MatteDiffuseAlgo_e   MatteDiffuseAlgo;
 
@@ -26,18 +27,30 @@ struct Material_s {
     // MaterialType type;
 
     /**
+     * Returns the color of the `sphere` at position `pos` in the `scene`.
+     * Internally this function can call ray_trace() (depending on the material) to calculate incoming light from scattered rays.
+     *
      * NOTE: this function can modify `ray` and `pos`.
      */
     Color (*hit)(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 };
 
-struct MaterialLightData_s {
+struct MaterialDataLight_s {
     // Here `color` must be: <light_color> * <luminosity>.
     // Where <light_color> is the standard 24bit Color type.
-    // I'm not sure how to define the units for <luminosity> though. You can imagine that when <luminosity> = 1, then then this is the same
-    // as a matte object. Experiment to get the right value.
+    // I'm not sure how to define the units for <luminosity> though. You can imagine that when <luminosity> = 1, then this is the same
+    // as a matte object. Experiment with this to get the right value.
     Color color;
 };
+
+struct MaterialDataMetal_s {
+    // The fuzziness of the reflected rays. Should be set to >= 0.
+    // If set to 0 (no fuzziness) - then the material is perfect glass (i.e. produces perfect reflections).
+    // The higher this value - the more the material behaves like a matte material (where reflected rays scatter in any direction) and less
+    // like a metal material (where rays reflect with mirror reflections).
+    double fuzziness;
+};
+
 
 enum MatteDiffuseAlgo_e {
     MDA_randomVectorInUnitSphere = 1,
@@ -64,5 +77,8 @@ extern Material matGround;
 
 // A material that simply emits a specific color at all times (rays don't scatter off of it).
 extern Material matLight;
+
+// A metal (specular highlights reflection) material.
+extern Material matMetal;
 
 #endif // __MATERIAL_H__
