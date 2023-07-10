@@ -116,7 +116,7 @@ static void init_world(App *app)
         .origin     = camOrigin,
         .direction  = camDirection,
     };
-    cam_set(&app->camera, &camCenterRay, app->windowHeight * ANTIALIAS_FACTOR, app->windowWidth * ANTIALIAS_FACTOR);
+    cam_set(&app->camera, &camCenterRay);
 
     init_scene(app);
 }

@@ -25,11 +25,17 @@
 #define WINDOW_WIDTH        400
 #define WINDOW_HEIGHT       400
 
+// This configures the down-sampling (super-sampling) anti-aliasing.
 // How many vertical/horizontal pixels will be rendered and averaged to produce one resulting pixel, when anti-aliasing.
 // For example, if ANTIALIAS_FACTOR is 2 - then 4 pixels (2 by 2) will be rendered to produce one resulting pixel.
 //
 // Set ANTIALIAS_FACTOR to 1 to disable anti-aliasing.
-#define ANTIALIAS_FACTOR    2
+//
+// UPDATE: we don't use this anymore, but i kept the support for this anti-aliasing.
+// Instead we now randomize the camera rays directions for each pixel (within pixel's boundaries) for each frame, see cam_frame_init().
+// This performs much better and results in better anti-aliasing and better overall rendered image quality (after multiple frames are
+// blended together).
+#define ANTIALIAS_FACTOR    1
 
 
 typedef struct App_s            App;
@@ -91,8 +97,8 @@ struct App_s {
     SDL_Renderer   *sdlRenderer;
     SDL_Texture    *sdlTexture;
 
-    uint32_t        windowWidth;
-    uint32_t        windowHeight;
+    uint32_t        windowWidth;        // The final displayed image width.
+    uint32_t        windowHeight;       // The final displayed image height.
 
     Scene           scene;
     Camera          camera;

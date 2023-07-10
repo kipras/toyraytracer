@@ -27,54 +27,28 @@ void render_frame_img_antialiased(App *app, Color *img, uint32_t imgHeight, uint
 
 void render_frame_img(App *app, Color *img, uint32_t imgHeight, uint32_t imgWidth)
 {
-    // Ray ray = app->cameraCenterRay;
+    CameraFrameContext cfc;
+    cam_frame_init(app, &cfc, imgHeight, imgWidth);
 
-    // uint32_t imgMidHeight = imgHeight >> 1;
-    // uint32_t imgMidWidth = imgWidth >> 1;
+    Ray ray = {
+        .origin = app->camera.camCenterRay.origin,
+        .direction = {.x = 0, .y = 0, .z = 0},
+    };
 
     for (uint32_t row = 0; row < imgHeight; row++) {
-        // Ray direction is from [v=1, u=-1] (top left corner) to [v=-1, u=1] (bottom right corner).
         uint32_t imgV = imgHeight - row - 1;
-
-        // // Ray direction is from [y=1, x=-1] (top left corner) to [y=-1, x=1] (bottom right corner).
-        // // Depth (z) remains unchanged at -1.
-        // ray.direction.y = ((double)(imgHeight - imgV) / imgMidHeight) - 1;
-        // // printf("\n");
-        // // printf("ray.direction.y = %f\n", ray.direction.y);
-
-        // ray.direction.z = app->camera.imgVToCamRayDirZ[imgV];
-
-        // printf("\n");
-        // printf("[imgV=%d] ray.direction.z = %f\n", imgV, ray.direction.z);
-        // printf("[imgV=%d] [row=%d]\n", imgV, row);
-
-        uint32_t camRaysArrRowOffset = imgV * imgWidth;
         uint32_t imgArrRowOffset = row * imgWidth;
+
         for (uint32_t imgU = 0; imgU < imgWidth; imgU++) {
-            // ray.direction.x = ((double)imgU / imgMidWidth) - 1;
-            // // printf("ray.direction.x = %f\n", ray.direction.x);
-
-            // ray.direction.x = app->camera.imgUToCamRayDirX[imgU];
-            // ray.direction.y = app->camera.imgUToCamRayDirY[imgU];
-
-            Ray *ray = &app->camera.camRays[camRaysArrRowOffset + imgU];
-
-            // printf("[imgV=%d, imgU=%d] ray.direction.x = %f\n", imgV, imgU, ray.direction.x);
-            // printf("[imgV=%d, imgU=%d] ray.direction.y = %f\n", imgV, imgU, ray.direction.y);
-
-            // printf("[imgV=%d, imgU=%d] vector3_length(ray.direction) = %f\n", imgV, imgU, vector3_length(&ray->direction));
+            // The produced `ray.direction` vector is a unit vector. This is needed for dot product later on, by some materials.
+            // That way those materials don't need to compute the unit vector themselves.
+            cam_frame_get_ray_direction(&cfc, imgU, imgV, &ray.direction);
 
             RTContext rtContext;
             ray_trace_context_init(&rtContext);
 
-            // // We will pass a ray, where `direction` is a unit vector, because this is needed for dot product later on, by some materials.
-            // // That way those materials don't need to compute the unit vector themselves.
-            // Ray unitRay = ray;
-            // vector3_to_unit(&unitRay.direction);
-
             Color color;
-            // if (! ray_trace(&rtContext, &app->scene, &unitRay, &color)) {
-            if (! ray_trace(&rtContext, &app->scene, ray, &color)) {
+            if (! ray_trace(&rtContext, &app->scene, &ray, &color)) {
                 color = (Color)COLOR_BLACK;
 
                 // // Ray didn't hit anything - rendering background instead.

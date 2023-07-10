@@ -19,16 +19,10 @@
  * Result: the spheres are skewed towards the sides of the image - they are "eggs" (i.e. reverse of being "blunt"). They are skewed towards
  * each side (top/left/right/bottom). This is visible with FOV 90. With FOV 40 - it is barely noticeable.
  */
-
-void cam_set(Camera *cam, Ray *centerRay, uint16_t imgHeight, uint16_t imgWidth)
+void cam_set(Camera *cam, Ray *centerRay)
 {
     cam->camCenterRay = *centerRay;
 
-    // Allocate the cam->camRays array for pre-computed rays.
-    Ray *camRays = rtalloc(sizeof(Ray) * (imgHeight*imgWidth));
-    cam->camRays = camRays;
-
-    Vector3 *org = &centerRay->origin;
     Vector3 *dir = &centerRay->direction;
     double dirVectorLen = vector3_length(dir);      // This should be 1.0.
 
@@ -47,47 +41,62 @@ void cam_set(Camera *cam, Ray *centerRay, uint16_t imgHeight, uint16_t imgWidth)
     Vector3 up = {.x = 0, .y = 0, .z = 1};
 
     // Calculate a horizontal vector (left to right) of the viewing plane.
-    Vector3 viewPlaneHorizLeftToRight;
-    vector3_cross(&up, &dirReverse, &viewPlaneHorizLeftToRight);
-    vector3_to_unit(&viewPlaneHorizLeftToRight);
-    vector3_multiply_length(&viewPlaneHorizLeftToRight, planeWidth);
+    Vector3 *viewPlaneHorizLeftToRight = &cam->viewPlaneHorizLeftToRight;
+    vector3_cross(&up, &dirReverse, viewPlaneHorizLeftToRight);
+    vector3_to_unit(viewPlaneHorizLeftToRight);
+    vector3_multiply_length(viewPlaneHorizLeftToRight, planeWidth);
 
-    Vector3 viewPlaneHorizRightToLeftHalf = viewPlaneHorizLeftToRight;
-    vector3_multiply_length(&viewPlaneHorizRightToLeftHalf, -0.5);
+    Vector3 *viewPlaneHorizRightToLeftHalf = &cam->viewPlaneHorizRightToLeftHalf;
+    *viewPlaneHorizRightToLeftHalf = *viewPlaneHorizLeftToRight;
+    vector3_multiply_length(viewPlaneHorizRightToLeftHalf, -0.5);
 
     // Calculate a vertical vector (bottom to up) of the viewing plane.
-    Vector3 viewPlaneVertUpwards;
-    vector3_cross(&dirReverse, &viewPlaneHorizLeftToRight, &viewPlaneVertUpwards);
-    vector3_to_unit(&viewPlaneVertUpwards);
-    vector3_multiply_length(&viewPlaneVertUpwards, planeHeight);
+    Vector3 *viewPlaneVertUpwards = &cam->viewPlaneVertUpwards;
+    vector3_cross(&dirReverse, viewPlaneHorizLeftToRight, viewPlaneVertUpwards);
+    vector3_to_unit(viewPlaneVertUpwards);
+    vector3_multiply_length(viewPlaneVertUpwards, planeHeight);
 
-    Vector3 viewPlaneVertDownwardsHalf = viewPlaneVertUpwards;
-    vector3_multiply_length(&viewPlaneVertDownwardsHalf, -0.5);
+    Vector3 *viewPlaneVertDownwardsHalf = &cam->viewPlaneVertDownwardsHalf;
+    *viewPlaneVertDownwardsHalf = *viewPlaneVertUpwards;
+    vector3_multiply_length(viewPlaneVertDownwardsHalf, -0.5);
 
     // `dir` is a direction vector to view plane's center, and `dirToViewPlaneBottomLeft` is a direction vector to
     // view plane's bottom left corner.
-    Vector3 dirToViewPlaneBottomLeft = *dir;
-    vector3_add_to(&dirToViewPlaneBottomLeft, &viewPlaneVertDownwardsHalf, &dirToViewPlaneBottomLeft);
-    vector3_add_to(&dirToViewPlaneBottomLeft, &viewPlaneHorizRightToLeftHalf, &dirToViewPlaneBottomLeft);
+    Vector3 *dirToViewPlaneBottomLeft = &cam->dirToViewPlaneBottomLeft;
+    *dirToViewPlaneBottomLeft = *dir;
+    vector3_add_to(dirToViewPlaneBottomLeft, viewPlaneVertDownwardsHalf, dirToViewPlaneBottomLeft);
+    vector3_add_to(dirToViewPlaneBottomLeft, viewPlaneHorizRightToLeftHalf, dirToViewPlaneBottomLeft);
+}
 
+void cam_frame_init(App *app, CameraFrameContext *cfc, uint32_t imgHeight, uint32_t imgWidth)
+{
+    double verRandForPixel = random_double_0_1_exc() / imgHeight;
+    double horRandForPixel = random_double_0_1_exc() / imgWidth;
+
+    cfc->viewPlaneVertUpwardsPartArr        = rtalloc(sizeof(Vector3) * imgHeight);
+    cfc->viewPlaneHorizLeftToRightPartArr   = rtalloc(sizeof(Vector3) * imgWidth);
+
+    Camera *cam = &app->camera;
+    Vector3 *dirToViewPlaneBottomLeft = &cam->dirToViewPlaneBottomLeft;
+
+    // Generate `Ray.direction` vectors for the left-most pixel of each row of pixels in a rendered image.
+    Vector3 *viewPlaneVertUpwards = &cam->viewPlaneVertUpwards;
     for (uint16_t v = 0; v < imgHeight; v++) {
-        Vector3 viewPlaneVertUpwardsPart = viewPlaneVertUpwards;
-        vector3_multiply_length(&viewPlaneVertUpwardsPart, (double)v / imgHeight);
+        Vector3 viewPlaneVertUpwardsPart = *viewPlaneVertUpwards;
+        vector3_multiply_length(&viewPlaneVertUpwardsPart, ((double)v / imgHeight) + verRandForPixel);
 
-        Vector3 rowLeftRayDir;
-        vector3_add_to(&dirToViewPlaneBottomLeft, &viewPlaneVertUpwardsPart, &rowLeftRayDir);
+        // The vertical vector also includes the `dirToViewPlaneBottomLeft` part. I.e. this contains the entire `ray.direction` vector for
+        // this rendered image row.
+        vector3_add_to(dirToViewPlaneBottomLeft, &viewPlaneVertUpwardsPart, &viewPlaneVertUpwardsPart);
 
-        uint32_t arrVOffset = v * imgWidth;
-        for (uint16_t u = 0; u < imgWidth; u++) {
-            Vector3 viewPlaneHorizLeftToRightPart = viewPlaneHorizLeftToRight;
-            vector3_multiply_length(&viewPlaneHorizLeftToRightPart, (double)u / imgWidth);
+        cfc->viewPlaneVertUpwardsPartArr[v] = viewPlaneVertUpwardsPart;
+    }
 
-            Ray *camRay = &cam->camRays[arrVOffset + u];
-            camRay->origin = *org;
-
-            Vector3 *camRayDir = &camRay->direction;
-            vector3_add_to(&rowLeftRayDir, &viewPlaneHorizLeftToRightPart, camRayDir);
-            vector3_to_unit(camRayDir);
-        }
+    // Generate `Ray.direction` offset vector for each pixel in a single pixels row (from left to right) in a rendered image.
+    Vector3 *viewPlaneHorizLeftToRight = &cam->viewPlaneHorizLeftToRight;
+    for (uint16_t u = 0; u < imgWidth; u++) {
+        Vector3 viewPlaneHorizLeftToRightPart = *viewPlaneHorizLeftToRight;
+        vector3_multiply_length(&viewPlaneHorizLeftToRightPart, ((double)u / imgWidth) + horRandForPixel);
+        cfc->viewPlaneHorizLeftToRightPartArr[u] = viewPlaneHorizLeftToRightPart;
     }
 }
