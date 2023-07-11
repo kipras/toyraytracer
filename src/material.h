@@ -2,14 +2,16 @@
 #define __MATERIAL_H__
 
 
-typedef struct Material_s           Material;
-typedef struct MaterialDataLight_s  MaterialDataLight;
-typedef struct MaterialDataMetal_s  MaterialDataMetal;
-// typedef enum   MaterialType_e       MaterialType;
-typedef enum   MatteDiffuseAlgo_e   MatteDiffuseAlgo;
+typedef struct Material_s                   Material;
+typedef struct MaterialDataLight_s          MaterialDataLight;
+typedef struct MaterialDataMetal_s          MaterialDataMetal;
+typedef struct MaterialDataDielectric_s     MaterialDataDielectric;
+// typedef enum   MaterialType_e               MaterialType;
+typedef enum   MatteDiffuseAlgo_e           MatteDiffuseAlgo;
 
 
 #include "ray.h"
+#include "types.h"
 #include "vector.h"
 
 
@@ -48,7 +50,18 @@ struct MaterialDataMetal_s {
     // If set to 0 (no fuzziness) - then the material is perfect glass (i.e. produces perfect reflections).
     // The higher this value - the more the material behaves like a matte material (where reflected rays scatter in any direction) and less
     // like a metal material (where rays reflect with mirror reflections).
+    // I.e. it gives a "brushed" metal look (like the one of christmas tree bubbles).
     double fuzziness;
+};
+
+struct MaterialDataDielectric_s {
+    // The "refraction index" of the specific dielectric material. Different materials have different indexes.
+    // Typically air = 1.0, glass = 1.3–1.7, diamond = 2.4 (as stated by the "Ray tracing in one weekend" book).
+    double refractionIndex;
+
+    // A pre-computed inverted refraction index (i.e. for when a ray goes from material back to air).
+    // _refractionIndexInvBackToAir = 1.0 / refractionIndex
+    double _refractionIndexInvBackToAir;
 };
 
 
@@ -80,5 +93,21 @@ extern Material matLight;
 
 // A metal (specular highlights reflection) material.
 extern Material matMetal;
+
+// A dielectric (clear) material (e.g. water, glass).
+extern Material matDielectric;
+
+
+/**
+ * Initializes `sphere` as a dielectric sphere. Returns the same `sphere` pointer (this is useful for chaining function calls).
+ */
+Sphere * sphere_dielectric_init(Sphere *sphere, double refractionIndex);
+
+
+#define MAT_GLASS_REFRACTION_INDEX      1.5
+static inline Sphere * sphere_glass_init(Sphere *sphereInitData)
+{
+    return sphere_dielectric_init(sphereInitData, MAT_GLASS_REFRACTION_INDEX);
+}
 
 #endif // __MATERIAL_H__

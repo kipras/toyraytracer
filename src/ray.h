@@ -1,6 +1,8 @@
 #ifndef __RAY_H__
 #define __RAY_H__
 
+#include <stdbool.h>
+
 
 #define RAY_BOUNCES_MAX     20
 

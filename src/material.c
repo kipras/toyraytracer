@@ -5,6 +5,7 @@
 
 #include "color.h"
 #include "ray.h"
+#include "rtalloc.h"
 #include "rtmath.h"
 #include "vector.h"
 
@@ -16,6 +17,10 @@ static Color ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sp
 static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected);
+static Color dielectric_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static inline void refract(Vector3 *incoming, Vector3 *normal, double refractionRatio, double cosTheta, Vector3 *refracted);
+static inline Color _trace_scattered_ray(
+    Scene *scene, RTContext *rtContext, Sphere *sphere, Vector3 *pos, Vector3 *rayDirection, bool attenuate);
 
 
 Material matMatte = {
@@ -42,6 +47,9 @@ Material matLight = {
 };
 Material matMetal = {
     .hit = metal_hit,
+};
+Material matDielectric = {
+    .hit = dielectric_hit,
 };
 
 
@@ -79,58 +87,7 @@ static Color matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
         vector3_to_unit(&bouncedRayDirection);
     }
 
-    Ray bouncedRay = (Ray){
-        .origin = *pos,
-        .direction = bouncedRayDirection,
-    };
-
-    // printf("\nmatte_hit()\n");
-    // printf("rtContext->bounces = %d\n", rtContext->bounces);
-    // printf("sphere = %p\n", sphere);
-    // printf("ray origin .x = %f, .y = %f, .z = %f\n", ray->origin.x, ray->origin.y, ray->origin.z);
-    // printf("ray direction .x = %f, .y = %f, .z = %f\n", ray->direction.x, ray->direction.y, ray->direction.z);
-
-    // printf("pos .x = %f, .y = %f, .z = %f\n", pos->x, pos->y, pos->z);
-
-    // printf("bouncedRay origin .x = %f, .y = %f, .z = %f\n", bouncedRay.origin.x, bouncedRay.origin.y, bouncedRay.origin.z);
-    // printf("bouncedRay direction .x = %f, .y = %f, .z = %f\n", bouncedRay.direction.x, bouncedRay.direction.y, bouncedRay.direction.z);
-    // printf("\n");
-
-    Color bouncedRayIncomingColor;
-    bool traceSuccess = ray_trace(rtContext, scene, &bouncedRay, &bouncedRayIncomingColor);
-
-    // printf("traceSuccess = %d\n", traceSuccess);
-
-    if (! traceSuccess) {
-        // Could not find any incoming color (light), so just shade this pixel of the sphere with black.
-        return (Color)COLOR_BLACK;
-    }
-
-    // // For calculating the dot product between incoming `ray` and the `bouncedRay` - we need to reverse `bouncedRay` direction.
-    // Vector3 bouncedRayReverseDirection = (Vector3){
-    //     .x = -bouncedRay.direction.x, .y = -bouncedRay.direction.y, .z = -bouncedRay.direction.z,
-    // };
-    // double raysDotProduct = vector3_dot(&ray->direction, &bouncedRayReverseDirection);
-
-    // double raysDotProduct = fabs(vector3_dot(&ray->direction, &bouncedRay.direction));
-    // double bouncedRayIncomingLight =
-    //         raysDotProduct
-    //       * ((double)(bouncedRayIncomingColor.red + bouncedRayIncomingColor.green + bouncedRayIncomingColor.blue) / (256*3));
-
-    // double bouncedRayIncomingLight =
-    //         ((double)(bouncedRayIncomingColor.red + bouncedRayIncomingColor.green + bouncedRayIncomingColor.blue) / (256*3));
-
-    // printf("bouncedRayIncomingColor .red = %d, .green = %d, .blue = %d\n", bouncedRayIncomingColor.red, bouncedRayIncomingColor.green, bouncedRayIncomingColor.blue);
-    // printf("raysDotProduct = %f\n", raysDotProduct);
-    // printf("bouncedRayIncomingLight = %f\n", bouncedRayIncomingLight);
-
-    Color *sphereColor = &sphere->color;
-
-    return (Color){
-        .red    = sphereColor->red   * bouncedRayIncomingColor.red,
-        .green  = sphereColor->green * bouncedRayIncomingColor.green,
-        .blue   = sphereColor->blue  * bouncedRayIncomingColor.blue,
-    };
+    return _trace_scattered_ray(scene, rtContext, sphere, pos, &bouncedRayDirection, true);
 }
 
 static Color shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
@@ -141,7 +98,7 @@ static Color shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sp
     (void)(sphere);
     (void)(pos);
 
-    // printf("\nshaded_hit()\n");
+    // printf("\n shaded_hit() \n");
 
     // // @TODO: Implement me!
     // return (Color)COLOR_BLACK;
@@ -171,7 +128,7 @@ static Color sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *spher
     (void)(sphere);
     (void)(pos);
 
-    // printf("\nsky_hit()\n");
+    // printf("\n sky_hit() \n");
 
     double z = ray->direction.z;
     if (z < 0) {
@@ -189,7 +146,7 @@ static Color ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sp
     (void)(sphere);
     (void)(pos);
 
-    // printf("\nground_hit()\n");
+    // printf("\n ground_hit() \n");
 
     return (Color)COLOR_GROUND;
 }
@@ -201,7 +158,7 @@ static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
     (void)(rtContext);
     (void)(pos);
 
-    // printf("\nlight_hit()\n");
+    // printf("\n light_hit() \n");
 
     MaterialDataLight *matData = sphere->matData;
 
@@ -214,13 +171,6 @@ static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
 
 static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
-    (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
-    (void)(ray);
-    (void)(rtContext);
-    (void)(pos);
-
-    // printf("\nlight_hit()\n");
-
     // A metal surface does a mirror-like reflection of incoming light, along the surface normal.
 
     Vector3 normal;
@@ -230,28 +180,7 @@ static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
     MaterialDataMetal *matData = sphere->matData;
     mirror_reflect(&ray->direction, &normal, matData->fuzziness, &bouncedRayDirection);
 
-    Ray bouncedRay = (Ray){
-        .origin = *pos,
-        .direction = bouncedRayDirection,
-    };
-
-    Color bouncedRayIncomingColor;
-    bool traceSuccess = ray_trace(rtContext, scene, &bouncedRay, &bouncedRayIncomingColor);
-
-    // printf("traceSuccess = %d\n", traceSuccess);
-
-    if (! traceSuccess) {
-        // Could not find any incoming color (light), so just shade this pixel of the sphere with black.
-        return (Color)COLOR_BLACK;
-    }
-
-    Color *sphereColor = &sphere->color;
-
-    return (Color){
-        .red    = sphereColor->red   * bouncedRayIncomingColor.red,
-        .green  = sphereColor->green * bouncedRayIncomingColor.green,
-        .blue   = sphereColor->blue  * bouncedRayIncomingColor.blue,
-    };
+    return _trace_scattered_ray(scene, rtContext, sphere, pos, &bouncedRayDirection, true);
 }
 
 static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected)
@@ -266,11 +195,118 @@ static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuz
 
     vector3_subtract(incoming, &b2, reflected);
 
-    if (fuzziness > DBL_EPSILON) {
+    if (fuzziness > DBL_EPSILON) {          // if (fuzziness > 0)
+        // Produce a "fuzzy" reflection. This gives a "brushed" metal look (like christmas tree bubbles :) ).
         Vector3 randomPointInUnitSphere;
         random_point_in_unit_sphere(&randomPointInUnitSphere);
         vector3_multiply_length(&randomPointInUnitSphere, fuzziness);
 
         vector3_add_to(reflected, &randomPointInUnitSphere, reflected);
     }
+}
+
+Sphere * sphere_dielectric_init(Sphere *sphere, double refractionIndex)
+{
+    sphere->material = &matDielectric;
+
+    MaterialDataDielectric *matData = rtalloc(sizeof(MaterialDataDielectric));
+    matData->refractionIndex = refractionIndex;
+    matData->_refractionIndexInvBackToAir = 1.0 / refractionIndex;
+    sphere->matData = matData;
+
+    return sphere;
+}
+
+static Color dielectric_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
+{
+    // A dielectric surface is a clear (see-through) surface. But the rays of light may "break", depending on the ratio of "reflective indices" of the
+
+    MaterialDataDielectric *matData = sphere->matData;
+    double refractionRatio = matData->_refractionIndexInvBackToAir;
+
+    Vector3 normal;
+    calc_sphere_surface_normal(sphere, pos, &normal);
+
+    Vector3 incomingReversed = ray->direction;
+    vector3_multiply_length(&incomingReversed, -1);
+    double cosTheta = fmin(vector3_dot(&incomingReversed, &normal), 1.0);
+    double sinTheta = sqrt(1.0 - cosTheta*cosTheta);
+
+    Vector3 scatteredRayDirection;
+    bool canRefract = (refractionRatio * sinTheta) <= 1.0;
+    // printf("refractionRatio * sinTheta = %f \n", refractionRatio * sinTheta);
+    if (! canRefract) {
+        printf("cannot refract \n");
+    }
+    if (canRefract) {
+        refract(&ray->direction, &normal, refractionRatio, cosTheta, &scatteredRayDirection);
+    } else {
+        mirror_reflect(&ray->direction, &normal, 0.0, &scatteredRayDirection);
+    }
+
+    return _trace_scattered_ray(scene, rtContext, sphere, pos, &scatteredRayDirection, false);
+}
+
+static inline void refract(Vector3 *incoming, Vector3 *normal, double refractionRatio, double cosTheta, Vector3 *refracted)
+{
+    Vector3 refrPerp;
+    Vector3 normalMultipliedByCosTheta = *normal;
+    vector3_multiply_length(&normalMultipliedByCosTheta, cosTheta);
+    vector3_add_to(incoming, &normalMultipliedByCosTheta, &refrPerp);
+    vector3_multiply_length(&refrPerp, refractionRatio);
+
+    Vector3 refrPar = *normal;
+    double refrPerpLen = vector3_length(&refrPerp);
+    double refrParMultiplier = -sqrt(fabs(1.0 - (refrPerpLen*refrPerpLen)));
+    vector3_multiply_length(&refrPar, refrParMultiplier);
+
+    vector3_add_to(&refrPerp, &refrPar, refracted);
+}
+
+/**
+ * Given a direction of a ray that scattered after hitting a sphere - traces the scattered ray and returns the final color for the
+ * **incoming** ray (meaning this also computes the shading between the color returned by the scattered ray and the color of the sphere
+ * itself).
+ *
+ * NOTE: the incoming ray may have hit from outside the sphere or from inside the sphere. This function at the moment only properly handles
+ * the case where the ray hit from outside the sphere, but should handle both cases (TODO).
+ *
+ * @TODO: handle the case where the incoming ray hits from inside the sphere.
+ *
+ * @param scene The scene.
+ * @param rtContext The ray-tracing context for this ray.
+ * @param sphere The sphere that was hit.
+ * @param pos The position where the sphere was hit by the incoming ray. This will be used as the origin point for the scattered ray.
+ * @param rayDirection The direction of the scattered ray.
+ * @param attenuate A boolean, determining whether to use the color of the sphere when determining the final color or not. This will be
+ *                  false for colorless see-through materials (e.g. glass) and true otherwise. This is a micro-optimisation to avoid
+ *                  needlessly multiplying the traced scattered ray color by 1.0, for those materials.
+ * @return Color The color to be returned for the **incoming** ray.
+ */
+static inline Color _trace_scattered_ray(
+    Scene *scene, RTContext *rtContext, Sphere *sphere, Vector3 *pos, Vector3 *rayDirection, bool attenuate)
+{
+    Ray scatteredRay = (Ray){
+        .origin = *pos,
+        .direction = *rayDirection,
+    };
+
+    Color scatteredRayColor;
+    bool traceSuccess = ray_trace(rtContext, scene, &scatteredRay, &scatteredRayColor);
+
+    // printf("traceSuccess = %d\n", traceSuccess);
+
+    if (! traceSuccess) {
+        // Could not find any incoming color (light), so just shade this pixel of the sphere with black.
+        return (Color)COLOR_BLACK;
+    }
+
+    if (attenuate) {
+        Color *sphereColor = &sphere->color;
+        scatteredRayColor.red *= sphereColor->red;
+        scatteredRayColor.green *= sphereColor->green;
+        scatteredRayColor.blue *= sphereColor->blue;
+    }
+
+    return scatteredRayColor;
 }

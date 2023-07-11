@@ -65,16 +65,20 @@ typedef enum {
     // This produces a scene that is similar to the original FOV 90 scene (at FOV 90).
     SC_6_spheres__fov_40__cam_z_15_downwards,
 
-    // Similar to SC_6_spheres__fov_40__cam_z_15_downwards, but includes more material types (than just matte) and
-    // spheres have other colors (than just pure red/green/blue),
+    // Similar to SC_6_spheres__fov_40__cam_z_15_downwards, but some of the spheres are metal.
+    // Also, spheres have other colors (than just pure red/green/blue),
     SC_6_spheres__fov_40__cam_z_15_downwards_v2,
+
+    // Similar to SC_6_spheres__fov_40__cam_z_15_downwards, but some of the spheres are metal/glass.
+    // Also, spheres have other colors (than just pure red/green/blue),
+    SC_6_spheres__fov_40__cam_z_15_downwards_v3,
 
     SC_camera_testing_1_sphere_fov_90,
     SC_camera_testing_4_spheres_fov_90,
     SC_camera_testing_4_spheres_fov_40,
 } SceneConfig;
 
-#define SCENE_CONFIG    SC_6_spheres__fov_40__cam_z_15_downwards_v2
+#define SCENE_CONFIG    SC_6_spheres__fov_40__cam_z_15_downwards_v3
 
 
 typedef enum {
@@ -109,6 +113,7 @@ void scene_6_spheres__fov_90(App *app);
 void scene_6_spheres__fov_40__cam_z_0(App *app);
 void scene_6_spheres__fov_40__cam_z_15_downwards(App *app);
 void scene_6_spheres__fov_40__cam_z_15_downwards_v2(App *app);
+void scene_6_spheres__fov_40__cam_z_15_downwards_v3(App *app);
 void scene_camera_testing_1_sphere__fov_90(App *app);
 void scene_camera_testing_4_spheres__fov_90(App *app);
 void scene_camera_testing_4_spheres__fov_40(App *app);

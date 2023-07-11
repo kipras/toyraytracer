@@ -23,6 +23,7 @@ static void init_scene(App *app);
 static void add_light(App *app, Sphere sphere, Color color);
 static void add_metal_sphere(App *app, Sphere sphere, double fuzziness);
 static void add_sphere(App *app, Sphere sphere);
+static void add_sphere_ptr(App *app, Sphere *sphere);
 static void run_render_loop(App *app);
 static void output_stats(App *app, struct timespec *tstart, uint64_t frames);
 static bool keyboard_key_pressed();
@@ -143,6 +144,9 @@ static void init_scene(App *app)
         case SC_6_spheres__fov_40__cam_z_15_downwards_v2:
             scene_6_spheres__fov_40__cam_z_15_downwards_v2(app); break;
 
+        case SC_6_spheres__fov_40__cam_z_15_downwards_v3:
+            scene_6_spheres__fov_40__cam_z_15_downwards_v3(app); break;
+
         case SC_camera_testing_1_sphere_fov_90:
             scene_camera_testing_1_sphere__fov_90(app); break;
 
@@ -234,15 +238,33 @@ void scene_6_spheres__fov_40__cam_z_15_downwards(App *app)
 
 void scene_6_spheres__fov_40__cam_z_15_downwards_v2(App *app)
 {
-    // Standard 6 sphere scene. FOV 40. Camera origin z = 15 (slightly above ground) and looking slightly downwards.
+    // Standard 6 sphere scene. FOV 40. Camera origin z = 15 (slightly above ground) and looking slightly downwards. With metal spheres.
 
     add_sphere(app, (Sphere){.center = {.x = 24, .y = 120, .z = 20}, .radius = 10, .material = &matMatte, .color = COLOR_HALF_GREEN});          // Top right sphere.
     add_metal_sphere(app, (Sphere){.center = {.x = 0, .y = 90, .z = 6}, .radius = 10, .material = &matMetal, .color = COLOR_QUARTER_RED}, 0.3); // Center sphere (the big one).
     add_metal_sphere(app, (Sphere){.center = {.x = -18, .y = 90, .z = 1}, .radius = 5, .material = &matMatte, .color = COLOR_HALF_BLUE}, 0.0);  // Center left sphere (small).
 
-    add_sphere(app, (Sphere){.center = {.x = -8, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_BLUE});   // Bottom left sphere (small).
-    add_sphere(app, (Sphere){.center = {.x = 0, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_RED});     // Bottom center sphere (small).
-    add_sphere(app, (Sphere){.center = {.x = 8, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});   // Bottom right sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = -8, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_BLUE});  // Bottom left sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_RED});    // Bottom center sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 8, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});  // Bottom right sphere (small).
+
+    add_light(app, (Sphere){.center = {.x = -9, .y = 75, .z = 20}, .radius = 4, .material = &matLight}, (Color)COLOR_LIGHT);    // A light.
+
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 220, .z = -2000}, .radius = 2000, .material = &matMatte, .color = COLOR_GROUND});  // Ground sphere.
+}
+
+void scene_6_spheres__fov_40__cam_z_15_downwards_v3(App *app)
+{
+    // Standard 6 sphere scene. FOV 40. Camera origin z = 15 (slightly above ground) and looking slightly downwards. With metal+glass spheres.
+
+    add_sphere(app, (Sphere){.center = {.x = 24, .y = 120, .z = 20}, .radius = 10, .material = &matMatte, .color = COLOR_HALF_GREEN});          // Top right sphere.
+    // add_metal_sphere(app, (Sphere){.center = {.x = 0, .y = 90, .z = 6}, .radius = 10, .material = &matMetal, .color = COLOR_QUARTER_RED}, 0.3); // Center sphere (the big one).
+    add_sphere_ptr(app, sphere_glass_init(&(Sphere){.center = {.x = 0, .y = 90, .z = 6}, .radius = 10}));                                     // Center sphere (the big one).
+    add_metal_sphere(app, (Sphere){.center = {.x = -18, .y = 90, .z = 1}, .radius = 5, .material = &matMatte, .color = COLOR_HALF_BLUE}, 0.0);  // Center left sphere (small).
+
+    add_sphere_ptr(app, sphere_glass_init(&(Sphere){.center = {.x = -8, .y = 50, .z = -4}, .radius = 3}));                     // Bottom left sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 0, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_RED});    // Bottom center sphere (small).
+    add_sphere(app, (Sphere){.center = {.x = 8, .y = 50, .z = -4}, .radius = 3, .material = &matMatte, .color = COLOR_GREEN});  // Bottom right sphere (small).
 
     add_light(app, (Sphere){.center = {.x = -9, .y = 75, .z = 20}, .radius = 4, .material = &matLight}, (Color)COLOR_LIGHT);    // A light.
 
@@ -320,12 +342,17 @@ static void add_metal_sphere(App *app, Sphere sphere, double fuzziness)
 
 static void add_sphere(App *app, Sphere sphere)
 {
+    add_sphere_ptr(app, &sphere);
+}
+
+static void add_sphere_ptr(App *app, Sphere *sphere)
+{
     if (app->scene.spheresLength == SCENE_SPHERES_MAX) {
         log_err("Cannot add another sphere to the scene - scene already has maximum spheres");
         exit(1);
     }
 
-    app->scene.spheres[app->scene.spheresLength] = sphere;
+    app->scene.spheres[app->scene.spheresLength] = *sphere;
     app->scene.spheresLength++;
 }
 
