@@ -252,6 +252,10 @@ static inline void random_point_in_unit_sphere(Vector3 *point)
     // If we apply vector3_to_unit() to the result of each random algo call (to produce a unit vector) - then random algo is still
     // ~25% faster.
 
+    // NOTE: if this algorithm is changed - then we may need to update MatteDiffuseAlgo types (see matte_hit()), because the difference
+    // between MDA_randomVectorInUnitSphere and MDA_randomUnitVectorInUnitSphere depends on this random algo returning a _unit or smaller_
+    // vector. If it always returned a unit vector - then most likely those algos will behave the same.
+
     // Note that random algo generates a _unit or smaller_ vector.
     random_point_in_unit_sphere__random_algo(point);
 

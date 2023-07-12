@@ -73,12 +73,20 @@ typedef enum {
     // Also, spheres have other colors (than just pure red/green/blue),
     SC_6_spheres__fov_40__cam_z_15_downwards_v3,
 
+    // Similar to SC_6_spheres__fov_40__cam_z_15_downwards_v3, except:
+    // * has an additional metal (mirror) sphere at middle right.
+    // * the top right green sphere is brushed metal (instead of matte).
+    SC_7_spheres__fov_40__cam_z_15_downwards,
+
     SC_camera_testing_1_sphere_fov_90,
     SC_camera_testing_4_spheres_fov_90,
     SC_camera_testing_4_spheres_fov_40,
+
+    SC_rt_testing__1_sphere_center__fov_40,
+    SC_rt_testing__1_sphere_inside__fov_40,
 } SceneConfig;
 
-#define SCENE_CONFIG    SC_6_spheres__fov_40__cam_z_15_downwards_v3
+#define SCENE_CONFIG    SC_7_spheres__fov_40__cam_z_15_downwards
 
 
 typedef enum {
@@ -114,9 +122,12 @@ void scene_6_spheres__fov_40__cam_z_0(App *app);
 void scene_6_spheres__fov_40__cam_z_15_downwards(App *app);
 void scene_6_spheres__fov_40__cam_z_15_downwards_v2(App *app);
 void scene_6_spheres__fov_40__cam_z_15_downwards_v3(App *app);
+void scene_7_spheres__fov_40__cam_z_15_downwards(App *app);
 void scene_camera_testing_1_sphere__fov_90(App *app);
 void scene_camera_testing_4_spheres__fov_90(App *app);
 void scene_camera_testing_4_spheres__fov_40(App *app);
+void scene_rt_testing__1_sphere_center__fov_40(App *app);
+void scene_rt_testing__1_sphere_inside__fov_40(App *app);
 void sky_ambient_gray_07(App *app);
 void sky_gradient_blue(App *app);
 void sky_ambient_blue(App *app);

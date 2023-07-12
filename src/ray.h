@@ -58,12 +58,6 @@ static inline void calc_sphere_surface_normal(Sphere *sphere, Vector3 *point, Ve
  */
 bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color *color);
 
-/**
- * If `ray` hits `sphere` - the distance (>= 0) from the origin of the `ray` to the point on `sphere` where it hits.
- * Otherwise returns -1.
- */
-double ray_distance_to_sphere(Ray *ray, Sphere *sphere);
-
 
 static inline void ray_trace_context_init(RTContext *context)
 {

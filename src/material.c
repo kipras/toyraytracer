@@ -18,6 +18,8 @@ static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
 static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected);
 static Color dielectric_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
+static inline bool does_ray_hit_from_sphere_inside(Vector3 *rayDir, Vector3 *sphereOutwardNormal);
+static inline double schlicks_reflectance_approximation(double cosTheta, double refractionRatio);
 static inline void refract(Vector3 *incoming, Vector3 *normal, double refractionRatio, double cosTheta, Vector3 *refracted);
 static inline Color _trace_scattered_ray(
     Scene *scene, RTContext *rtContext, Sphere *sphere, Vector3 *pos, Vector3 *rayDirection, bool attenuate);
@@ -53,17 +55,9 @@ Material matDielectric = {
 };
 
 
-// static uint32_t hits = 0;
 static Color matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
-    // (void)(scene);      // Disable gcc -Wextra "unused parameter" errors.
-    (void)(ray);
-    // (void)(sphere);
-    // (void)(pos);
-
-    // if (++hits > 100) {
-    //     exit(1);
-    // }
+    (void)(ray);        // Disable gcc -Wextra "unused parameter" errors.
 
     Vector3 normal;
     calc_sphere_surface_normal(sphere, pos, &normal);
@@ -183,6 +177,13 @@ static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
     return _trace_scattered_ray(scene, rtContext, sphere, pos, &bouncedRayDirection, true);
 }
 
+/**
+ * Calculates reflection for an `incoming` ray, off of a mirror surface `normal`, and stores the reflected ray direction in `reflected`.
+ *
+ * If fuzziness > 0, then also applies fuzziness, which gives a "brushed" metal look. See MaterialDataMetal.fuzziness description.
+ *
+ * IMPORTANT: this function expects the surface `normal` vector to go in the opposite direction from the `incoming` ray direction vector.
+ */
 static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected)
 {
     // Mirror reflection ray direction is calculated by formula: reflected = incoming + 2b
@@ -202,6 +203,8 @@ static inline void mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuz
         vector3_multiply_length(&randomPointInUnitSphere, fuzziness);
 
         vector3_add_to(reflected, &randomPointInUnitSphere, reflected);
+
+        vector3_to_unit(reflected);
     }
 }
 
@@ -217,34 +220,82 @@ Sphere * sphere_dielectric_init(Sphere *sphere, double refractionIndex)
     return sphere;
 }
 
+/**
+ * Dielectric material.
+ *
+ * A dielectric surface is a clear (see-through) surface. When a ray of light hits a dielectric material - it can
+ * reflect or it can "refract" (meaning it goes through the surface boundary, but its angle).
+ *
+ * Also note, that because a ray that hits a dielectric material can refract (meaning it can go inside the object) -
+ * rays can also hit the object surface from _inside_ the object.
+ *
+ * But the rays of light may "refract", depending on "refractive indexes" ratio of
+ * the two materials (the sphere and outside the sphere).
+ *
+ * IMPORTANT: it is important for this function that ray->direction is a **unit** vector !
+ */
 static Color dielectric_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
-    // A dielectric surface is a clear (see-through) surface. But the rays of light may "break", depending on the ratio of "reflective indices" of the
+    Vector3 sphereSurfaceNormal;
+    calc_sphere_surface_normal(sphere, pos, &sphereSurfaceNormal);
+
+    bool isHitFromSphereInside = does_ray_hit_from_sphere_inside(&ray->direction, &sphereSurfaceNormal);
+
+    Vector3 *sphereRayHitNormal;
+    Vector3 sphereSurfaceNormalReversed;
+    if (! isHitFromSphereInside) {
+        sphereRayHitNormal = &sphereSurfaceNormal;
+    } else {
+        sphereSurfaceNormalReversed = sphereSurfaceNormal;
+        vector3_multiply_length(&sphereSurfaceNormalReversed, -1.0);
+        sphereRayHitNormal = &sphereSurfaceNormalReversed;
+    }
 
     MaterialDataDielectric *matData = sphere->matData;
-    double refractionRatio = matData->_refractionIndexInvBackToAir;
+    double refractionRatio = isHitFromSphereInside ? matData->refractionIndex : matData->_refractionIndexInvBackToAir;
 
-    Vector3 normal;
-    calc_sphere_surface_normal(sphere, pos, &normal);
+    // It is important for this calculation that `ray->direction` is a unit vector.
+    // Otherwise we would have to divide the result of the dot product by the length of `ray->direction` to get the
+    // cosine of the angle between them. (We don't have to divide by `normal`, because it is always a unit vector).
+    double cosTheta = vector3_dot(&ray->direction, &sphereSurfaceNormal);
+    if (! isHitFromSphereInside) {
+        cosTheta = -cosTheta;
+    }
 
-    Vector3 incomingReversed = ray->direction;
-    vector3_multiply_length(&incomingReversed, -1);
-    double cosTheta = fmin(vector3_dot(&incomingReversed, &normal), 1.0);
+    // The "Ray Tracing in One Weekend" book here also applied `cosTheta = fmin(cosTheta, 1.0)` (i.e. an 1.0 upper bound for `cosTheta`).
+    // However, were not adding it, because it is not needed. `cosTheta` is a dot product between two unit vectors (i.e. an actual cosine
+    // of the angle between them) so it cannot exceed 1.0 (except maybe for floating point inaccuracies/deviations). We've tested this and
+    // `cosTheta` did not exceed 1.0 in our tests, so we're not adding this upper bound.
+    //
+    // If it were to exceed 1.0 somehow however - then `sinTheta` will be assigned a NaN value below, and subsequently `cannotRefract` will
+    // be false, because `refractionRatio * sinTheta` will be NaN as well (and comparing NaN with any number always evaluates to false,
+    // except when comparing with != operator (then it is always true)). So the outcome in that case is correct (`cannotRefract` should be
+    // false, if `cosTheta == 1.0` (and so `sinTheta == 0.0`)) and so we don't need to add any additional checks/limits.
+
     double sinTheta = sqrt(1.0 - cosTheta*cosTheta);
 
     Vector3 scatteredRayDirection;
-    bool canRefract = (refractionRatio * sinTheta) <= 1.0;
-    // printf("refractionRatio * sinTheta = %f \n", refractionRatio * sinTheta);
-    if (! canRefract) {
-        printf("cannot refract \n");
-    }
-    if (canRefract) {
-        refract(&ray->direction, &normal, refractionRatio, cosTheta, &scatteredRayDirection);
+    bool cannotRefract = (refractionRatio * sinTheta) > 1.0;
+
+    if (cannotRefract || schlicks_reflectance_approximation(cosTheta, refractionRatio) > random_double_0_1_exc()) {
+        mirror_reflect(&ray->direction, sphereRayHitNormal, 0.0, &scatteredRayDirection);
     } else {
-        mirror_reflect(&ray->direction, &normal, 0.0, &scatteredRayDirection);
+        refract(&ray->direction, sphereRayHitNormal, refractionRatio, cosTheta, &scatteredRayDirection);
     }
 
     return _trace_scattered_ray(scene, rtContext, sphere, pos, &scatteredRayDirection, false);
+}
+
+static inline bool does_ray_hit_from_sphere_inside(Vector3 *rayDir, Vector3 *sphereOutwardNormal)
+{
+    return vector3_dot(rayDir, sphereOutwardNormal) > 0.0;
+}
+
+static inline double schlicks_reflectance_approximation(double cosTheta, double refractionRatio)
+{
+    double r0root = ((double)(1.0 - refractionRatio)) / (1.0 + refractionRatio);
+    double r0 = r0root*r0root;
+    return r0 + ((1 - r0) * pow((1 - cosTheta), 5));
 }
 
 static inline void refract(Vector3 *incoming, Vector3 *normal, double refractionRatio, double cosTheta, Vector3 *refracted)
@@ -261,6 +312,8 @@ static inline void refract(Vector3 *incoming, Vector3 *normal, double refraction
     vector3_multiply_length(&refrPar, refrParMultiplier);
 
     vector3_add_to(&refrPerp, &refrPar, refracted);
+
+    vector3_to_unit(refracted);
 }
 
 /**
