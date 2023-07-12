@@ -26,7 +26,7 @@ static void add_sphere(App *app, Sphere sphere);
 static void add_sphere_ptr(App *app, Sphere *sphere);
 static void run_render_loop(App *app);
 static void output_stats(App *app, struct timespec *tstart, uint64_t frames);
-static bool keyboard_key_pressed();
+static bool keyboard_esc_pressed();
 static inline void output_clear_current_line();
 static inline void output_go_up_one_line();
 
@@ -389,8 +389,8 @@ static void run_render_loop(App *app)
         // void (*f) = output_stats; (void)f;
 
         // Run rendering until the user presses any key.
-        if (keyboard_key_pressed()) {
-            printf("User pressed a key, exiting.\n");
+        if (keyboard_esc_pressed()) {
+            printf("User pressed the Esc key, exiting.\n");
             // SDL_Delay(500);
             return;
         }
@@ -418,13 +418,13 @@ static void output_stats(App *app, struct timespec *tstart, uint64_t frames)
     printf("Rays per second = %'f\n", rps);
 }
 
-static bool keyboard_key_pressed()
+static bool keyboard_esc_pressed()
 {
     SDL_Event event;
 
     // Process all events currently in the event queue.
     while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_KEYDOWN) {
+        if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
             return true;
         }
     }
