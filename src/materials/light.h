@@ -4,7 +4,7 @@
 typedef struct MaterialDataLight_s          MaterialDataLight;
 
 
-#include "../types.h"
+#include "../color.h"
 
 
 struct MaterialDataLight_s {

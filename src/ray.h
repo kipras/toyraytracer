@@ -15,9 +15,7 @@ typedef struct Ray_s            Ray;
 typedef struct RTContext_s      RTContext;
 
 
-// #include "main.h"
-
-#include "types.h"
+#include "scene.h"
 #include "vector.h"
 
 

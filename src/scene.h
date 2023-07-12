@@ -1,6 +1,15 @@
 #ifndef __SCENE_H__
 #define __SCENE_H__
 
+#define SCENE_SPHERES_MAX   20
+
+
+typedef struct Scene_s          Scene;
+
+
+#include "sphere.h"
+
+
 typedef enum {
     CC_z_0,
     CC_z_15_downwards,
@@ -57,6 +66,12 @@ typedef enum {
 } SkyConfig;
 
 #define SKY_CONFIG      SK_ambient_gray_07
+
+
+struct Scene_s {
+    Sphere         *spheres;
+    uint32_t        spheresLength;
+};
 
 
 void init_scene(Scene *scene);

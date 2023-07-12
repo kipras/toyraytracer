@@ -29,6 +29,7 @@ static void add_sphere_ptr(Scene *scene, Sphere *sphere);
 
 void init_scene(Scene *scene)
 {
+    scene->spheres = rtalloc(sizeof(Sphere) * SCENE_SPHERES_MAX);
     scene->spheresLength = 0;
 
     // Choose one of the available scene configurations (descriptions inside each function).
