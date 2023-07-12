@@ -5,6 +5,7 @@ typedef struct MaterialDataLight_s          MaterialDataLight;
 
 
 #include "../color.h"
+#include "../sphere.h"
 
 
 struct MaterialDataLight_s {
@@ -14,5 +15,8 @@ struct MaterialDataLight_s {
     // as a matte object. Experiment with this to get the right value.
     Color color;
 };
+
+
+Sphere * sphere_light_init(Sphere *sphere, Color color);
 
 #endif // __LIGHT_H__

@@ -4,6 +4,9 @@
 typedef struct MaterialDataMetal_s          MaterialDataMetal;
 
 
+#include "../sphere.h"
+
+
 struct MaterialDataMetal_s {
     // The fuzziness of the reflected rays. Should be set to >= 0.
     // If set to 0 (no fuzziness) - then the material is perfect glass (i.e. produces perfect reflections).
@@ -12,5 +15,8 @@ struct MaterialDataMetal_s {
     // I.e. it gives a "brushed" metal look (like the one of christmas tree bubbles).
     double fuzziness;
 };
+
+
+Sphere * sphere_metal_init(Sphere *sphere, double fuzziness);
 
 #endif // __METAL_H__

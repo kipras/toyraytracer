@@ -1,6 +1,7 @@
 #include "metal.h"
 #include "../material.h"
 #include "../ray_inline_fns.h"
+#include "../rtalloc.h"
 
 
 static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
@@ -10,6 +11,17 @@ Material matMetal = {
     .hit = metal_hit,
 };
 
+
+Sphere * sphere_metal_init(Sphere *sphere, double fuzziness)
+{
+    sphere->material = &matMetal;
+
+    MaterialDataMetal *matData = rtalloc(sizeof(MaterialDataMetal));
+    matData->fuzziness = fuzziness;
+    sphere->matData = matData;
+
+    return sphere;
+}
 
 static Color metal_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {

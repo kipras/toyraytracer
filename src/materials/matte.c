@@ -12,6 +12,7 @@ Material matMatte = {
     .hit = matte_hit,
 };
 
+
 static Color matte_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos)
 {
     (void)(ray);        // Disable gcc -Wextra "unused parameter" errors.
