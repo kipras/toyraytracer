@@ -6,7 +6,6 @@ typedef struct Material_s                   Material;
 
 
 #include "ray.h"
-#include "types.h"
 #include "vector.h"
 
 

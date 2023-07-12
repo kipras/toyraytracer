@@ -4,7 +4,7 @@
 typedef struct MaterialDataDielectric_s     MaterialDataDielectric;
 
 
-#include "../types.h"
+#include "../sphere.h"
 
 
 struct MaterialDataDielectric_s {

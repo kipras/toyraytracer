@@ -46,7 +46,6 @@ typedef struct App_s            App;
 
 #include "camera.h"
 #include "ray.h"
-#include "types.h"
 
 
 struct App_s {

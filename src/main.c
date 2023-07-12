@@ -12,7 +12,6 @@
 #include "random.h"
 #include "renderer.h"
 #include "scene.h"
-#include "types.h"
 #include "vector.h"
 
 
