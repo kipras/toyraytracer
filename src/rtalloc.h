@@ -1,7 +1,6 @@
 #ifndef __RTALLOC_H__
 #define __RTALLOC_H__
 
-
 #include <stdio.h>
 #include <stdlib.h>
 

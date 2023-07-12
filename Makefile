@@ -11,7 +11,7 @@ endif
 
 src_dir := src
 
-sources := $(wildcard $(src_dir)/*.c)
+sources := $(wildcard $(src_dir)/*.c $(src_dir)/materials/*.c)
 objects := $(sources:.c=.o)
 header_deps := $(sources:.c=.d)
 

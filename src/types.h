@@ -1,7 +1,6 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-
 #define SCENE_SPHERES_MAX   20
 
 

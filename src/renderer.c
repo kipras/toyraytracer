@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "color.h"
+#include "ray_inline_fns.h"
 #include "renderer.h"
 
 

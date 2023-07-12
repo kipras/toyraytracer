@@ -1,13 +1,8 @@
 #ifndef __MATERIAL_H__
 #define __MATERIAL_H__
 
-
 typedef struct Material_s                   Material;
-typedef struct MaterialDataLight_s          MaterialDataLight;
-typedef struct MaterialDataMetal_s          MaterialDataMetal;
-typedef struct MaterialDataDielectric_s     MaterialDataDielectric;
 // typedef enum   MaterialType_e               MaterialType;
-typedef enum   MatteDiffuseAlgo_e           MatteDiffuseAlgo;
 
 
 #include "ray.h"
@@ -37,43 +32,6 @@ struct Material_s {
     Color (*hit)(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sphere, Vector3 *pos);
 };
 
-struct MaterialDataLight_s {
-    // Here `color` must be: <light_color> * <luminosity>.
-    // Where <light_color> is the standard 24bit Color type.
-    // I'm not sure how to define the units for <luminosity> though. You can imagine that when <luminosity> = 1, then this is the same
-    // as a matte object. Experiment with this to get the right value.
-    Color color;
-};
-
-struct MaterialDataMetal_s {
-    // The fuzziness of the reflected rays. Should be set to >= 0.
-    // If set to 0 (no fuzziness) - then the material is perfect glass (i.e. produces perfect reflections).
-    // The higher this value - the more the material behaves like a matte material (where reflected rays scatter in any direction) and less
-    // like a metal material (where rays reflect with mirror reflections).
-    // I.e. it gives a "brushed" metal look (like the one of christmas tree bubbles).
-    double fuzziness;
-};
-
-struct MaterialDataDielectric_s {
-    // The "refraction index" of the specific dielectric material. Different materials have different indexes.
-    // Typically air = 1.0, glass = 1.3–1.7, diamond = 2.4 (as stated by the "Ray tracing in one weekend" book).
-    double refractionIndex;
-
-    // A pre-computed inverted refraction index (i.e. for when a ray goes from material back to air).
-    // _refractionIndexInvBackToAir = 1.0 / refractionIndex
-    double _refractionIndexInvBackToAir;
-};
-
-
-enum MatteDiffuseAlgo_e {
-    MDA_randomVectorInUnitSphere = 1,
-    MDA_randomUnitVectorInUnitSphere,
-    MDA_randomVectorInHemisphere,
-};
-
-#define MATTE_DIFFUSE_ALGO      MDA_randomUnitVectorInUnitSphere
-
-
 
 // "Matte" material (uses diffuse/Lambertian reflection).
 extern Material matMatte;
@@ -99,15 +57,32 @@ extern Material matDielectric;
 
 
 /**
- * Initializes `sphere` as a dielectric sphere. Returns the same `sphere` pointer (this is useful for chaining function calls).
+ * Calculates reflection for an `incoming` ray, off of a mirror surface `normal`, and stores the reflected ray direction in `reflected`.
+ *
+ * If fuzziness > 0, then also applies fuzziness, which gives a "brushed" metal look. See MaterialDataMetal.fuzziness description.
+ *
+ * IMPORTANT: this function expects the surface `normal` vector to go in the opposite direction from the `incoming` ray direction vector.
  */
-Sphere * sphere_dielectric_init(Sphere *sphere, double refractionIndex);
+void mat_mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Vector3 *reflected);
 
-
-#define MAT_GLASS_REFRACTION_INDEX      1.5
-static inline Sphere * sphere_glass_init(Sphere *sphereInitData)
-{
-    return sphere_dielectric_init(sphereInitData, MAT_GLASS_REFRACTION_INDEX);
-}
+/**
+ * Given a direction of a ray that scattered after hitting a sphere - traces the scattered ray and returns the final color for the
+ * **incoming** ray (meaning this also computes the shading between the color returned by the scattered ray and the color of the sphere
+ * itself).
+ *
+ * NOTE: the incoming ray may have hit from outside the sphere or from inside the sphere. This function at the moment only properly handles
+ * the case where the ray hit from outside the sphere, but should handle both cases (TODO).
+ *
+ * @param scene The scene.
+ * @param rtContext The ray-tracing context for this ray.
+ * @param sphere The sphere that was hit.
+ * @param pos The position where the sphere was hit by the incoming ray. This will be used as the origin point for the scattered ray.
+ * @param rayDirection The direction of the scattered ray.
+ * @param attenuate A boolean, determining whether to use the color of the sphere when determining the final color or not. This will be
+ *                  false for colorless see-through materials (e.g. glass) and true otherwise. This is a micro-optimisation to avoid
+ *                  needlessly multiplying the traced scattered ray color by 1.0, for those materials.
+ * @return Color The color to be returned for the **incoming** ray.
+ */
+Color mat_trace_scattered_ray(Scene *scene, RTContext *rtContext, Sphere *sphere, Vector3 *pos, Vector3 *rayDirection, bool attenuate);
 
 #endif // __MATERIAL_H__
