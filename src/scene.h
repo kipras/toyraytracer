@@ -1,7 +1,6 @@
 #ifndef __SCENE_H__
 #define __SCENE_H__
 
-
 typedef enum {
     CC_z_0,
     CC_z_15_downwards,

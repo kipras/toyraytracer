@@ -1,6 +1,9 @@
 #include "main.h"
 #include "rtalloc.h"
 #include "scene.h"
+#include "materials/dielectric.h"
+#include "materials/light.h"
+#include "materials/metal.h"
 
 
 static void scene_6_spheres__fov_90(Scene *scene);

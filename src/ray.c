@@ -2,6 +2,7 @@
 #include <float.h>
 
 #include "ray.h"
+#include "ray_inline_fns.h"
 #include "vector.h"
 
 

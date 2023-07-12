@@ -1,7 +1,6 @@
 #ifndef __RTMATH_H__
 #define __RTMATH_H__
 
-
 #define max(a,b)             \
 ({                           \
     __typeof__ (a) _a = (a); \
