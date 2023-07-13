@@ -1,14 +1,9 @@
-#include <assert.h>
 #include <locale.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 
 #include "main.h"
-
-#include "camera.h"
 #include "random.h"
 #include "renderer.h"
 #include "scene.h"
@@ -64,14 +59,6 @@ static void init_screen(App *app)
     app->windowHeight   = WINDOW_HEIGHT;
 
     renderer_init(app);
-
-    // SDL_Init(SDL_INIT_VIDEO);
-    // SDL_CreateWindowAndRenderer(app->windowWidth, app->windowHeight, 0, &app->window, &app->renderer);
-    // // SDL_RenderSetScale(renderer, 4, 4);
-
-    // SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
-    // SDL_RenderClear(app->renderer);
-    // SDL_RenderPresent(app->renderer);
 }
 
 static void init_world(App *app)
@@ -121,7 +108,7 @@ static void run_render_loop(App *app)
     struct timespec tstart;
     clock_gettime(CLOCK_MONOTONIC, &tstart);
 
-    Color allFrames[app->windowHeight * app->windowWidth];        // NOTE: should this perhaps be Color64 (to avoid overflow/cap) ?
+    Color allFrames[app->windowHeight * app->windowWidth];
 
     // Have to clear the allFrames buffer first. The other buffers we don't need to clear, because we will be directly writing images to
     // them. But the allFrames buffer will be _appended to_ instead of _set_, so we must make sure that each color of each pixel starts
@@ -146,12 +133,9 @@ static void run_render_loop(App *app)
         // Calculate & output performance stats
         output_stats(app, &tstart, frames);
 
-        // void (*f) = output_stats; (void)f;
-
-        // Run rendering until the user presses any key.
+        // Run rendering until the user presses the Esc key.
         if (keyboard_esc_pressed()) {
             printf("User pressed the Esc key, exiting.\n");
-            // SDL_Delay(500);
             return;
         }
     }

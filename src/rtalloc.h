@@ -2,7 +2,6 @@
 #define __RTALLOC_H__
 
 #include <stdio.h>
-#include <stdlib.h>
 
 
 /**
@@ -16,6 +15,13 @@
 #define rtfree(p)           free(p)
 
 
+/**
+ * Allocates a block of memory of size `sz` (in bytes) on the heap. Exits the program immediately (with exit code 1) if allocation failed,
+ * so it will never return NULL.
+ *
+ * toyraytracer uses this wrapper to avoid having to add NULL checks for every allocation. If a memory allocation failed - we will have to
+ * exit the program anyway, so it's best to handle that in the allocator directly.
+ */
 static inline void * rtalloc(size_t sz);
 
 

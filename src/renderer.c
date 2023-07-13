@@ -3,6 +3,7 @@
 #include "color.h"
 #include "ray_inline_fns.h"
 #include "renderer.h"
+#include "rtmath.h"
 
 
 // static inline Color render_background_pixel(App *app, Ray *ray);

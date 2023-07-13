@@ -5,7 +5,6 @@ static Color ground_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sp
 
 
 Material matGround = {
-    // .type = MT_Ground,
     .hit = ground_hit,
 };
 

@@ -5,7 +5,6 @@ static Color gradient_sky_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphe
 
 
 Material matGradientSky = {
-    // .type = MT_Sky,
     .hit = gradient_sky_hit,
 };
 

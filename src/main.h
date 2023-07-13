@@ -1,8 +1,6 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
-#include <stdbool.h>
-
 // stdio.h is required for log_err() definition (fprintf and stderr).
 #include <stdio.h>
 
@@ -45,7 +43,7 @@ typedef struct App_s            App;
 
 
 #include "camera.h"
-#include "ray.h"
+#include "scene.h"
 
 
 struct App_s {

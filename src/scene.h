@@ -1,11 +1,17 @@
 #ifndef __SCENE_H__
 #define __SCENE_H__
 
+/**
+ * Various pre-defined scene/camera/sky configurations that can be used.
+ */
+
 #define SCENE_SPHERES_MAX   20
 
 
 typedef struct Scene_s          Scene;
 
+
+#include <stdint.h>
 
 #include "sphere.h"
 

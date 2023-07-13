@@ -1,11 +1,6 @@
 #ifndef __COLOR_H__
 #define __COLOR_H__
 
-#include <stdint.h>
-
-#include "rtmath.h"
-
-
 typedef struct Color_s          Color;
 
 

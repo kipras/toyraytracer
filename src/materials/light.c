@@ -7,7 +7,6 @@ static Color light_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sph
 
 
 Material matLight = {
-    // .type = MT_Ground,
     .hit = light_hit,
 };
 

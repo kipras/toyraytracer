@@ -2,6 +2,7 @@
 #define __RAY_H__
 
 #include <stdbool.h>
+#include <stdint.h>
 
 
 #define RAY_BOUNCES_MAX     20
@@ -32,9 +33,14 @@ struct RTContext_s {
 
 /**
  * Traces `ray` through the `scene`.
- * IMPORTANT: ray->direction must be a **unit** vector (some materials expect the passed incoming ray to be a unit vector).
+ *
  * If the `ray` hits something (and is traced successfully) - then returns true and stores the resulting color in `color`.
  * Otherwise - returns false.
+ *
+ * IMPORTANT: ray->direction must be a **unit** vector (some materials expect the passed incoming ray to be a unit vector).
+ *
+ * NOTE: the ray may hit a sphere from outside of it or from inside it (e.g. for the sky sphere or if it is a ray that refracted off the
+ * surface of the sphere to inside the sphere). This function handles both cases.
  */
 bool ray_trace(RTContext *rtContext, Scene *scene, Ray *ray, Color *color);
 

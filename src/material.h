@@ -2,26 +2,13 @@
 #define __MATERIAL_H__
 
 typedef struct Material_s                   Material;
-// typedef enum   MaterialType_e               MaterialType;
 
 
 #include "ray.h"
 #include "vector.h"
 
 
-// enum MaterialType_e {
-//     // MT_Matte = 1,       // Diffuse ? Lambert ?
-//     // MT_Metal,           // ?? (Specular ??)
-//     // MT_Glass,           // Refractive ? Dielectric ?
-//     MT_Shaded,
-//     MT_Sky,             // A special material for the sky sphere.
-//     MT_Ground,          // A (temporary) special material for the ground sphere.
-// };
-
-
 struct Material_s {
-    // MaterialType type;
-
     /**
      * Returns the color of the `sphere` at position `pos` in the `scene`.
      * Internally this function can call ray_trace() (depending on the material) to calculate incoming light from scattered rays.
@@ -68,9 +55,6 @@ void mat_mirror_reflect(Vector3 *incoming, Vector3 *normal, double fuzziness, Ve
  * Given a direction of a ray that scattered after hitting a sphere - traces the scattered ray and returns the final color for the
  * **incoming** ray (meaning this also computes the shading between the color returned by the scattered ray and the color of the sphere
  * itself).
- *
- * NOTE: the incoming ray may have hit from outside the sphere or from inside the sphere. This function at the moment only properly handles
- * the case where the ray hit from outside the sphere, but should handle both cases (TODO).
  *
  * @param scene The scene.
  * @param rtContext The ray-tracing context for this ray.

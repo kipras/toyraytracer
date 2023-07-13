@@ -30,7 +30,6 @@ cc_opts := ${cc_opts} -O3
 
 # I think the default stack size (in windows msys2 msys64/mingw64) is 1MB. This is only enough to render 200x200 images, but not 400x400
 # (because we store everything on the stack, including the image buffers).
-# Increasing to 16MB allows rendering images of at least up to 1024x1024.
 stack_size_bytes := 67108864
 
 ifeq ($(ENV_LINUX), 1)

@@ -6,8 +6,6 @@ static Color shaded_hit(Scene *scene, Ray *ray, RTContext *rtContext, Sphere *sp
 
 
 Material matShaded = {
-    // .type = MT_Shaded,
-    // .scatter = matte_scatter,
     .hit = shaded_hit,
 };
 

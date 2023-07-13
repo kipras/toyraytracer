@@ -1,3 +1,7 @@
+/**
+ * Various pre-defined scene/camera/sky configurations that can be used.
+ */
+
 #include "main.h"
 #include "rtalloc.h"
 #include "scene.h"
