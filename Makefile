@@ -36,7 +36,7 @@ ifeq ($(ENV_LINUX), 1)
 linker_opts := -Wl,--stack,${stack_size_bytes} -L SDL2-2.24.0/build/build/.libs -lSDL2main -lSDL2 -Wl,-rpath,${DIR}/SDL2-2.24.0/build/build/.libs -lm
 main_bin := $(src_dir)/main
 else
-linker_opts := -Wl,--stack,${stack_size_bytes} -L SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
+linker_opts := -Wl,--stack,${stack_size_bytes} -L SDL2-devel-2.24.0-mingw/SDL2-2.24.0/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
 main_bin := $(src_dir)/main.exe
 endif
 

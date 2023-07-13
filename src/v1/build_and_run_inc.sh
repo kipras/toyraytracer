@@ -20,7 +20,7 @@ LINKEROPTS=""
 if [[ ${ENV_LINUX} == 1 ]]; then
     LINKEROPTS="-L SDL2-2.24.0/build/build/.libs -lSDL2main -lSDL2 -Wl,-rpath,${DIR}/SDL2-2.24.0/build/build/.libs -lm"
 else
-    LINKEROPTS='-L SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows'
+    LINKEROPTS='-L SDL2-devel-2.24.0-mingw/SDL2-2.24.0/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows'
 fi
 
 BIN=""

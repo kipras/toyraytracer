@@ -8,7 +8,7 @@
 #if defined(ENV_LINUX) && ENV_LINUX
 #include "../SDL2-2.24.0/include/SDL.h"
 #else
-#include "../SDL2-devel-2.24.0-mingw/x86_64-w64-mingw32/include/SDL2/SDL.h"
+#include "../SDL2-devel-2.24.0-mingw/SDL2-2.24.0/x86_64-w64-mingw32/include/SDL2/SDL.h"
 #endif // ENV_LINUX
 
 

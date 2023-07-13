@@ -2,11 +2,16 @@
 /_bak
 /_etc
 /cmake-build-debug
-/SDL2-2.24.0
-/SDL2-devel-2.24.0-mingw
+
+/SDL2-2.24.0/*
+!/SDL2-2.24.0/.gitplaceholder
+
+/SDL2-devel-2.24.0-mingw/*
+!/SDL2-devel-2.24.0-mingw/.gitplaceholder
 
 /CMakeLists.txt
 /envconfig.h
+/README-SDL.txt
 
 /src/main
 /src/out.txt
